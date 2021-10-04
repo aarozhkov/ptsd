@@ -1,0 +1,6 @@
+*.pyc
+pycache
+.git
+.venv
+.cache
+.mypy_cache
