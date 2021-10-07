@@ -1,5 +1,4 @@
 import asyncio
-import os
 import pytest
 from httpx import AsyncClient
 from shared.core.webserver import SomeFastApiApp

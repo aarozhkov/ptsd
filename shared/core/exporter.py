@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter
 from starlette_exporter import handle_metrics
 from starlette.requests import Request
 from starlette.responses import Response
