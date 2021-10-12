@@ -1,0 +1,128 @@
+{
+  "brands": [
+    {
+      "name": "BT",
+      "url": "https://video.cloudwork.bt.com/",
+      "locations": [
+        "iad",
+        "sjc",
+        "zrh",
+        "ams"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    },
+    {
+      "name": "ATT",
+      "url": "https://meetings.officeathand.att.com",
+      "locations": [
+        "iad",
+        "sjc"
+      ],
+      "testSuite": "video",
+      "unitsCount": 4
+    },
+    {
+      "name": "Atos",
+      "url": "https://video.unifyoffice.com",
+      "locations": [
+        "iad",
+        "sjc",
+        "zrh",
+        "ams"
+      ],
+      "testSuite": "video",
+      "unitsCount": 4
+    },
+    {
+      "name": "Avaya",
+      "url": "https://video.cloudoffice.avaya.com",
+      "locations": [
+        "iad",
+        "sjc",
+        "zrh",
+        "ams"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    },
+    {
+      "name": "Telus",
+      "url": "https://video.businessconnect.telus.com",
+      "locations": [
+        "iad",
+        "sjc"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    },
+    {
+      "name": "Alcatel",
+      "url": "https://video.rainbowoffice.com",
+      "locations": [
+        "iad",
+        "sjc",
+        "zrh",
+        "ams"
+      ],
+      "testSuite": "video",
+      "unitsCount": 4
+    },
+    {
+      "name": "Phoenix",
+      "url": "https://v.ringcentral.com",
+      "locations": [
+        "iad",
+        "sjc",
+        "zrh",
+        "ams"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    },
+    {
+      "name": "Verizon",
+      "url": "http://verizon.video.ringcentral.biz/",
+      "locations": [
+        "iad",
+        "sjc"
+      ],
+      "testSuite": "video",
+      "unitsCount": 4
+    },
+    {
+      "name": "Vodafone",
+      "url": "https://video.vodafonebusiness.ringcentral.com/",
+      "locations": [
+        "iad",
+        "sjc",
+        "ams",
+        "zrh"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    },
+    {
+      "name": "RC-Account",
+      "url": "https://v.ringcentral.com",
+      "locations": [
+        "iad",
+        "sjc"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    },
+    {
+      "name": "RC-Commercial",
+      "url": "https://v.ringcentral.com",
+      "locations": [
+        "iad",
+        "sjc",
+        "zrh",
+        "ams"
+      ],
+      "testSuite": "video",
+      "unitsCount": 6
+    }
+  ]
+}
