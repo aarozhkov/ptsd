@@ -5,9 +5,9 @@ from starlette_exporter import PrometheusMiddleware
 
 
 class SomeFastApiApp(FastAPI):
-    def __init__(self):
+    def __init__(self, app_name="some_app"):
         super().__init__()
-        self.add_middleware(PrometheusMiddleware)
+        self.add_middleware(PrometheusMiddleware, app_name=app_name)
         self.include_router(prometheus_router)
 
 
