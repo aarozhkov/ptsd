@@ -9,6 +9,9 @@ RUN pip install -r requirements.txt
 RUN useradd -U -s /bin/false app
 USER app
 
+COPY shared /app/
+COPY supervisor /app/
+
 EXPOSE 8080
 
-CMD ["sleep", "1000"]
+CMD ["python3", "-m" "supervisor.main"]
