@@ -2,6 +2,10 @@ import yaml
 import os
 from random import randrange
 from shared.models.account import Account
+from shared.core.log import Log
+
+
+log = Log('DEBUG')
 
 
 class Accounter():
@@ -18,7 +22,7 @@ class Accounter():
                     account = Account(**element)
                     accounts.append(account)
                 except Exception as e:
-                    print(f"Found ivalid account {element} in account list " + repr(e))
+                    log.error(f'Found invalid account {element} in account list', stack=e)
 
             self.pool.update({key: accounts})
 
@@ -35,13 +39,13 @@ class AccountsParser():
             try:
                 data = yaml.safe_load(conf)
             except yaml.YAMLError as e:
-                print("Parsing configuration failed with: " + repr(e))
+                log.error('Parsing configuration failed', stack=e)
 
         return data
 
     def parse(self, path):
         data = self._parse_yaml(path)
-        print(data)
+        log.debug(data)
         return data
 
 
@@ -50,6 +54,4 @@ if __name__=="__main__":
     data = parser.parse("accounts.yaml")
     accounter = Accounter(data)
     account = accounter.get_random_account_for_brand("RC-Commercial")
-    print(account)
-
-
+    log.debug(account)
