@@ -24,7 +24,7 @@ class AccountsConfig(BaseSettings):
 
 
 config = Config(".env")
-CONFIG_PATH = config("PTSD_CONFIG", cast=str, default="superviser.json")
+CONFIG_PATH = config("PTSD_CONFIG", cast=str, default="configs/supervisor.json")
 ACCOUNT_CONF_PATH = config("ACCOUNT_CONFIG", cast=str, default="accounts.json")
 SUPERVISOR_CONFIG = SuperVisorConfig.parse_file(CONFIG_PATH)
 # ACCOUNT_CONFIG = AccountsConfig.parse_file(ACCOUNT_CONF_PATH)

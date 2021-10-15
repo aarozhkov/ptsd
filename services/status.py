@@ -2,6 +2,8 @@
 # Probably it should not be service because there is no any background tasks
 # FIXME: add AbstractReportStorage usage instead of task List
 # FIXME: change report calculation on top of AbstractReportStorage interfaces
+# FIXME: old report generator ignore duplications by test ID. It should be done on storage level
+# FIXME: test Model MUST be changed!
 
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -9,6 +11,7 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from prometheus_client import Counter
+from pydantic.main import BaseModel
 from pytz import UTC
 
 from models.tests import ReportResponse, ResultEnum, TestResult
@@ -49,6 +52,10 @@ class StatusServiceException(Exception):
     """Named exception"""
 
 
+class TestList(BaseModel):
+    reports: List[TestResult]
+
+
 class StatusService:
     # TODO:
     def __init__(
@@ -64,7 +71,7 @@ class StatusService:
         self.report_expiration = report_expiration
         # TODO reload tests array from persistant storage?
 
-    def add_test_result(self, test: TestResult) -> dict:
+    async def add_test_result(self, test: TestResult) -> dict:
         # TODO do we need max test limitation?
         # TODO how we should clear test data?
         if len(self.tests) >= self.maxtests:
@@ -82,6 +89,9 @@ class StatusService:
         return {
             "success": True
         }  # should return success. Probably logic will be more complicated in future
+
+    def get_tests(self) -> TestList:
+        return TestList(reports=self.tests)
 
     def get_report(  # FIXME: refactor to sort with backend storage
         self,
@@ -177,6 +187,11 @@ async def report_request_verification(
 router = APIRouter(tags=["status"])
 
 
+@router.get("/api/v1/tests")
+async def get_tests():
+    return status_service.get_tests()
+
+
 @router.get("/status-json", response_model=ReportResponse)
 async def get_status_json(query: dict = Depends(report_request_verification)):
     return status_service.get_report(**query)
@@ -184,4 +199,4 @@ async def get_status_json(query: dict = Depends(report_request_verification)):
 
 @router.post("/api/v1/test-report")
 async def add_test(test: TestResult):
-    return status_service.add_test_result(test)
+    return await status_service.add_test_result(test)

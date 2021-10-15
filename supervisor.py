@@ -6,6 +6,7 @@ from starlette_exporter import PrometheusMiddleware, handle_metrics
 from services.dummy_service import dummy_service
 from services.dummy_service import router as dummy_router
 from services.status import router as status_router
+from services.scheduler import GenericQ, Scheduler
 
 # from services.config import superviser_config
 

@@ -1,8 +1,8 @@
 from os.path import exists
 from typing import Dict, List, Optional
 
+from pydantic import BaseModel
 import aiofiles
-from pydantic.main import BaseModel
 
 from models.tests import TestResult
 from storages.AbstractStorage import AbstractReportStorage
