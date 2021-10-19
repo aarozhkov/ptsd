@@ -17,6 +17,8 @@ from pytz import UTC
 from models.tests import ReportResponse, ResultEnum, TestResult
 from services import config
 
+import logging
+
 # FIXME: any settings initialisation should be done on top level
 DEFAULT_GROUPING = config.STATUS_DEF_GROUPING
 

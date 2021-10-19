@@ -61,8 +61,8 @@ class TestTask(BaseModel):
     rcw_version: str
     test_suit: str  # for now there is single test suit. Should it be different tasks or suit change within single task?
     # To create conference at least one selenium must be logged.
-    host_account: Account
-    location: str  # not sure if it needed, location can be defined by source queue
+    # host_account: Account
+    # location: str  # not sure if it needed, location can be defined by source queue
 
 
 class ReportResponse(BaseModel):

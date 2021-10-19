@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from supervisor import app
+from supervisor1 import app
 
 
 @pytest.fixture()

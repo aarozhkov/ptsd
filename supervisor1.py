@@ -5,8 +5,11 @@ from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from services.dummy_service import dummy_service
 from services.dummy_service import router as dummy_router
-from services.status import router as status_router
-from services.scheduler import GenericQ, Scheduler
+from services import config
+from services.status import StatusService, router as status_router
+from services.router import router as test_router
+
+# from services.scheduler import GenericQ, Scheduler
 
 # from services.config import superviser_config
 
@@ -38,6 +41,12 @@ async def app_startup():
     # asyncio.create_task(scheduler.run())
     # asyncio.create_task(accounter.run())
     # asyncio.create_task(accounter.run())
+    status = StatusService(
+        maxtests=config.STATUS_MAXTEST,
+        max_results_per_category=5,
+        report_expiration=config.STATUS_REPORT_TIMEFRAME,
+    )
+    app.dependency_overrides[StatusService] = lambda: status
     dummy_service.init({"value": 255})
     dummy_service.start()
 
@@ -51,6 +60,7 @@ async def app_startup():
 
 app.include_router(dummy_router)
 app.include_router(status_router)
+app.include_router(test_router)
 
 
 @app.get("/status")

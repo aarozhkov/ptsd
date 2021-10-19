@@ -9,8 +9,8 @@
         "zrh",
         "ams"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     },
     {
       "name": "ATT",
@@ -19,8 +19,8 @@
         "iad",
         "sjc"
       ],
-      "testSuite": "video",
-      "unitsCount": 4
+      "test_suite": "video",
+      "units_count": 4
     },
     {
       "name": "Atos",
@@ -31,8 +31,8 @@
         "zrh",
         "ams"
       ],
-      "testSuite": "video",
-      "unitsCount": 4
+      "test_suite": "video",
+      "units_count": 4
     },
     {
       "name": "Avaya",
@@ -43,8 +43,8 @@
         "zrh",
         "ams"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     },
     {
       "name": "Telus",
@@ -53,8 +53,8 @@
         "iad",
         "sjc"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     },
     {
       "name": "Alcatel",
@@ -65,8 +65,8 @@
         "zrh",
         "ams"
       ],
-      "testSuite": "video",
-      "unitsCount": 4
+      "test_suite": "video",
+      "units_count": 4
     },
     {
       "name": "Phoenix",
@@ -77,8 +77,8 @@
         "zrh",
         "ams"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     },
     {
       "name": "Verizon",
@@ -87,8 +87,8 @@
         "iad",
         "sjc"
       ],
-      "testSuite": "video",
-      "unitsCount": 4
+      "test_suite": "video",
+      "units_count": 4
     },
     {
       "name": "Vodafone",
@@ -99,8 +99,8 @@
         "ams",
         "zrh"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     },
     {
       "name": "RC-Account",
@@ -109,8 +109,8 @@
         "iad",
         "sjc"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     },
     {
       "name": "RC-Commercial",
@@ -121,8 +121,8 @@
         "zrh",
         "ams"
       ],
-      "testSuite": "video",
-      "unitsCount": 6
+      "test_suite": "video",
+      "units_count": 6
     }
   ]
 }

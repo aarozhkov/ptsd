@@ -32,9 +32,9 @@ class Account(BaseModel):
 class Brand(BaseModel):
     name: str
     url: str
-    locations: list
-    test_suit: str = Field("video", alias="testSuilt")
-    unit_count: int = Field(alias="unitsCount")
+    # locations: list  # By new requerements we should not be aware of brand unit locations.
+    test_suite: str
+    units_count: int
 
 
 class Launcher(BaseModel):
