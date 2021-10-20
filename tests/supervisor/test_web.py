@@ -22,3 +22,8 @@ async def test_SomeFastApiApp_get_metrics(client):
     assert response.status_code == 200
     assert '# HELP' in response.text
 
+@pytest.mark.asyncio
+async def test_SupervisorApi_get_valid_account(client):
+    response = await client.get("/account?brand=RC-Commercial")
+    assert response.status_code in [200, 404]
+

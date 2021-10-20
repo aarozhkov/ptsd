@@ -1,9 +1,10 @@
 import uvicorn
-from shared.core.webserver import SomeFastApiApp
+from supervisor.api.supervisor_api import SupervisorApi
 
 
 
-supervisor_api = SomeFastApiApp(app_name="supervisor")
+supervisor_api = SupervisorApi(app_name="supervisor")
+
 
 
 if __name__=='__main__':
