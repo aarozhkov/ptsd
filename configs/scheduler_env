@@ -1,0 +1,6 @@
+task_queue_maxlen=100
+push_interval=1
+accounter_address="http://localhost:8080"
+superviser_address="http://localhost:8080"
+yaml_config="./configs/scheduler_config.yaml"
+max_test_in_progress=1

@@ -1,7 +1,7 @@
 from typing import Protocol, runtime_checkable
 from models.tests import TestTask
 from prometheus_client import Gauge
-from asyncio import Queue
+from asyncio import Queue, CancelledError
 
 
 QUEUE_LEN = Gauge(
@@ -23,7 +23,7 @@ class AbstractTaskQueue(Protocol):
     async def get(self) -> TestTask:
         """Abstract method to get task From queue"""
 
-    async def done(self, TestTask):
+    async def done(self, task: TestTask):
         """Abstract method to notify Task is processed and can be removed"""
 
 
@@ -40,9 +40,13 @@ class AsyncInMemoryQ:
         await self.queues_map.put(task)
         QUEUE_LEN.inc()
 
-    async def get(self) -> str:
-        QUEUE_LEN.dec()
-        return await self.queues_map.get()
+    async def get(self) -> TestTask:
+        try:
+            result = await self.queues_map.get()
+            QUEUE_LEN.dec()
+            return result
+        except CancelledError:
+            self.queues_map.task_done()
 
     async def done(self, task: TestTask):
         return

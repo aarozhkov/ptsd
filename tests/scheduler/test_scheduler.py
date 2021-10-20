@@ -44,7 +44,7 @@ def test_scheduler_backet_init(test_brands):
 async def test_scheduler_push_task(test_brands):
     mocked_task_queue = AsyncMock()
     scheduler = Scheduler(queue=mocked_task_queue, brands=[test_brands[0]])
-    await scheduler.add_task()
+    await scheduler.push_test_task()
     mocked_task_queue.push.assert_called_once()
     test_task = mocked_task_queue.push.call_args.args[0]  #
     assert isinstance(test_task, TestTask)
@@ -62,17 +62,33 @@ async def test_scheduler_background_task(test_brands):
         except asyncio.CancelledError:
             release scheduler
     """
+    # FIXME: TEst smels. Need to check before sleep, need to check canceleation
     mocked_task_queue = AsyncMock()
-    scheduler = Scheduler(queue=mocked_task_queue, brands=[test_brands[0]])
+    push_period = 2
+    scheduler = Scheduler(
+        queue=mocked_task_queue, brands=[test_brands[0]], periodicity=push_period
+    )
     test_background_task = asyncio.create_task(scheduler.pusher())
     assert test_background_task is not None
+
+    # Wait more then setted push_period
+    await asyncio.sleep(push_period + 1)
     test_background_task.cancel()
+    assert scheduler._runned_task is None
+    # Expect pusher
+    mocked_task_queue.push.assert_called_once()
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
+@pytest.mark.asyncio
 def test_scheduler_run_async_background_job(test_brands):
     mocked_task_queue = Mock()
-    with patch("scheduler.core.scheduler.asyncio", Mock()) as mocked_asyncio:
+    mocked_return_value = "mocked_task"
+    with patch(
+        "scheduler.core.scheduler.asyncio.create_task",
+        Mock(return_value=mocked_return_value),
+    ) as mocked_asyncio:
         scheduler = Scheduler(queue=mocked_task_queue, brands=[test_brands[0]])
         scheduler.run()
-        mocked_asyncio.create_task.assert_called_once()
+        mocked_asyncio.assert_called_once()
+        assert scheduler._runned_task == mocked_return_value
