@@ -5,9 +5,11 @@ from shared.models.account import Account
 
 @pytest.fixture(scope='module')
 @pytest.mark.asyncio
-async def data():
+async def accounter():
     data =  {'RC-Commercial': [{'phone_or_email': 1470649551, 'extension': [101, 102], 'password': 'Abyrvalg!123'}, {'phone_or_email': 1470649552, 'extension': [103], 'password': 'Abyrvalg!123]'}]}
-    yield data
+    accounter = Accounter()
+    accounter.parse_model(data)
+    yield accounter
 
 
 
@@ -19,14 +21,7 @@ def event_loop():
 
 
 @pytest.mark.asyncio
-async def test_parse_account(data):
-    accounter = Accounter(data)
-    assert 'RC-Commercial' in accounter.pool.keys()
-
-
-@pytest.mark.asyncio
-async def test_get_random_account(data):
-    accounter = Accounter(data)
+async def test_get_random_account(accounter):
     account = accounter.get_random_account_for_brand('RC-Commercial')
     assert account.phone_or_email
 

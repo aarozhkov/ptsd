@@ -1,0 +1,31 @@
+dirs:
+  testDir: ''
+  buildDir: ''
+testSuites:
+  allTests:
+    name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
+    methods:
+      - name: twoUsersAreAbleToSeeEachOther_p2pOff
+      - name: checkPstnParticipantInConference
+      - name: checkClosedCaptionsRecognitionInConference
+  pstnAndVideo:
+    name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
+    methods:
+      - name: twoUsersAreAbleToSeeEachOther_p2pOff
+      - name: checkPstnParticipantInConference
+  video:
+    name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
+    methods:
+      - name: twoUsersAreAbleToSeeEachOther_p2pOff
+  twoUsersAreAbleToSeeEachOther_p2pOff:
+    name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
+    methods:
+      - name: twoUsersAreAbleToSeeEachOther_p2pOff
+  checkPstnParticipantInConference:
+    name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
+    methods:
+      - name: checkPstnParticipantInConference
+  checkClosedCaptionsRecognitionInConference:
+    name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
+    methods:
+      - name: checkClosedCaptionsRecognitionInConference
