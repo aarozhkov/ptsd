@@ -1,5 +1,6 @@
 # configs
 *.yaml
+!adapter/*.yaml
 result/
 # Byte-compiled / optimized / DLL files
 pycache/
