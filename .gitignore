@@ -1,7 +1,9 @@
 # configs
 *.yaml
+.vscode
 !adapter/*.yaml
-result/
+results/
+builds/
 # Byte-compiled / optimized / DLL files
 pycache/
 *.py[cod]

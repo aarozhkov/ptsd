@@ -1,6 +1,7 @@
 dirs:
-  testDir: ''
-  buildDir: ''
+  resultsDir: '/app/results'
+  buildsDir: '/app/builds'
+testTimeout: 300
 testSuites:
   allTests:
     name: com.ringcentral.vlt.acceptance.tests.MainFlowTest
