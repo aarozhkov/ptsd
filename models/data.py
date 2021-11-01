@@ -17,16 +17,16 @@ from pydantic.fields import Field
 # "targetPartitionUnit" - specific unit to test
 
 
-class Account(BaseModel):
-    phone_or_email: str
-    extension: Optional[str]
-    password: str
-    partition: Optional[str]
-    # In case we can start to generate accounts in pool
-    due_date: Optional[str]
-    # is_busy:  In new implementation it can be checked by pool location:
-    #           pool: available_accounts -
-    #           pool: ocupated_accounts
+# class Account(BaseModel):
+#     phone_or_email: str
+#     extension: Optional[str]
+#     password: str
+#     partition: Optional[str]
+#     # In case we can start to generate accounts in pool
+#     due_date: Optional[str]
+#     # is_busy:  In new implementation it can be checked by pool location:
+#     #           pool: available_accounts -
+#     #           pool: ocupated_accounts
 
 
 class Brand(BaseModel):
@@ -44,9 +44,9 @@ class Launcher(BaseModel):
     conveyors: list
 
 
-class Account_Group(BaseModel):
-    group_name: str
-    account_list: List[Account]
+# class Account_Group(BaseModel):
+#     group_name: str
+#     account_list: List[Account]
 
 
 class Conveyor(BaseModel):

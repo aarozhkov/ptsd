@@ -1,6 +1,6 @@
-from models.tests import TestTask
+from shared.models.task import TestTask
 from scheduler.core.scheduler import Scheduler
-from models.data import Brand
+from shared.models.brand import Brand
 from unittest.mock import Mock, AsyncMock, patch
 import pytest
 from collections import Counter
@@ -12,15 +12,15 @@ def test_brands():
     brands = [
         {
             "name": "ATOS",
-            "url": "https://video.cloudwork.bt.com/",
+            "entrypoint": "https://video.cloudwork.bt.com/",
             "test_suite": "video",
-            "units_count": 2,
+            "desired_rate": 2,
         },
         {
             "name": "RC-Commercial",
-            "url": "https://v.ringcentral.com",
+            "entrypoint": "https://v.ringcentral.com",
             "test_suite": "video",
-            "units_count": 6,
+            "desired_rate": 6,
         },
     ]
     return [Brand.parse_obj(brand) for brand in brands]

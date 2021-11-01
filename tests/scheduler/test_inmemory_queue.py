@@ -3,12 +3,16 @@ from models.tests import TestTask
 from scheduler.core.queue import AbstractTaskQueue, AsyncInMemoryQ
 from prometheus_client import REGISTRY
 import pytest
+from uuid import uuid4
 
 
 @pytest.fixture
 def test_task():
     return TestTask(
-        id=1, brand="Atos", rcw_version="21.3.30", test_suit="video", location="iad01"
+        id=uuid4(),
+        brand="Atos",
+        brand_url="https://video.unifyoffice.com",
+        test_suit="video",
     )
 
 

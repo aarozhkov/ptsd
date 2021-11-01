@@ -1,15 +1,15 @@
 from pydantic import BaseModel
 from enum import Enum
-from typing import Optional
-from .account import Account
-from .brand import Brand
+from typing import Optional, List
+from datetime import datetime
+from uuid import UUID
 
 
 class TestTask(BaseModel):
-    id: int  # Uniq id for scheduled task
-    brand: Brand
-    # scheduled task is async. We not sure exact time of execution. Account must be asquired on execution time.
-    host_account: Optional[Account]
+    id: UUID
+    brand: str
+    brand_url: str
+    test_suit: str
 
 
 class ResultEnum(Enum):  # From java test stdout on PTR side
