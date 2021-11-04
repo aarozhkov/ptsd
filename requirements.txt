@@ -30,6 +30,7 @@ sniffio==1.2.0
 starlette==0.16.0
 starlette-exporter==0.10.0
 toml==0.10.2
+tortoise-orm==0.17.8
 typing-extensions==3.10.0.2
 urllib3==1.26.7
 yarl==1.5.1
