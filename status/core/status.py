@@ -1,16 +1,15 @@
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from prometheus_client import Counter
-from pydantic.main import BaseModel
 from pytz import UTC
 import copy
+from status.config import StatusSettings
 
-# from models.tests import ReportResponse, ResultEnum, TestResult
 from shared.models.task import TestResult
 from status.storages.base import ReportStorageCRUD
+from status.storages.sql_store import SQLStorageCRUD
 
 TEST_COUNT = Counter(
     "ptl_test_result_count_total",
@@ -21,7 +20,8 @@ TEST_COUNT = Counter(
 
 def check_expiration(test_date: datetime, expiration: int) -> bool:
     return (
-        datetime.now().replace(tzinfo=UTC) - timedelta(minutes=expiration) < test_date
+        datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration)
+        > test_date
     )
 
 
@@ -29,26 +29,22 @@ class StatusServiceException(Exception):
     """Named exception"""
 
 
-class TestList(BaseModel):
-    reports: List[TestResult]
-
-
-class StatusService:
+class Status:
     # TODO:
     def __init__(
         self,
         storage: ReportStorageCRUD,
         maxtests: int = 1000,
-        # max_results_per_category: int = 3,
-        # report_expiration: int = 60,
+        max_results_per_category: int = 3,
+        report_expiration: int = 60,
     ):
         self.storage = storage
         self.maxtests = maxtests
         self.default_pagination = 100
 
         # Legacy. Probably must be hardcoded due no usage
-        # self.max_results_per_category = max_results_per_category
-        # self.report_expiration = report_expiration
+        self.max_results_per_category = max_results_per_category
+        self.report_expiration = report_expiration
 
     async def add_test_result(self, test: TestResult) -> TestResult:
         # TODO do we need max test limitation?
@@ -79,6 +75,7 @@ class StatusService:
     async def _reqursive_grouping(
         self, created_filters: Dict[str, str], group_order: Dict
     ):
+        """recursion report grouping for legacy report v2"""
         if not group_order:
             # FIXME: This is a lot of separate requests to DB.
             return await self.storage.get_by_filters(
@@ -94,16 +91,20 @@ class StatusService:
 
         return result
 
-    def get_legacy_report(  # FIXME: refactor to sort with backend storage
+    def get_legacy_report_v2(self):
+        """Legacy report implementation with out pointers magic"""
+
+    async def get_legacy_report(  # FIXME: refactor to sort with backend storage
         self,
         group_order: List[str],
-        status: Optional[ResultEnum] = None,
+        status: Optional[str] = None,
         view_all: Optional[bool] = False,
-    ) -> ReportResponse:
+    ) -> dict:
         """Generate report struct"""
         # TODO actual report grouping can't be declaread static Type=). Should be converted
+        tests: List[TestResult] = await self.storage.get_by_filters()
         rcv = {"status": ""}
-        for test in self.tests:
+        for test in tests:
             pointer = rcv
             for category in group_order:
                 value = getattr(test, category)
@@ -113,7 +114,7 @@ class StatusService:
                     pointer[value] = {}
                     pointer = pointer[value]
                     pointer["status"] = ""
-            if status and test.outcome.status.value != status and not view_all:
+            if status and test.status != status and not view_all:
                 continue
             if len(pointer) + 1 >= self.max_results_per_category and not view_all:
                 continue
@@ -125,15 +126,15 @@ class StatusService:
             ):
                 continue
 
-            pointer[test.outcome.test_id] = {
+            pointer[test.test_id] = {
                 "timestamp": test.date_time.isoformat(),
                 "allure": test.allure_link,
                 "log": test.log_link,
-                "status": test.outcome.status.value,
+                "status": test.status,
             }
         self._set_statuses(rcv)
 
-        return ReportResponse(success=True, groupBy=".".join(group_order), rcv=rcv)
+        return dict(success=True, groupBy=".".join(group_order), rcv=rcv)
 
     def _set_statuses(self, report: dict) -> str:
         if report["status"]:
@@ -145,9 +146,10 @@ class StatusService:
             if child == "status":
                 continue
             child_status = self._set_statuses(report[child])
-            if child_status in ["GREEN", ResultEnum.passed.value]:
+            # if child_status in ["GREEN", ResultEnum.passed.value]:
+            if child_status in ["GREEN", "PASSED"]:
                 passed_test = +1
-            if child_status == ResultEnum.failed.value:
+            if child_status == "FAILED":
                 failed_test = +1
             if child_status in ["YELLOW", "RED"]:
                 status = child_status
@@ -164,40 +166,25 @@ class StatusService:
         return status
 
 
-status_service = StatusService()
+status_service = Status(storage=SQLStorageCRUD(), **StatusSettings().dict())
 
 
+# FIXME raise StatusServiceException instead of HTTPException
+#       regestry Status service exception in fastapi
 async def report_request_verification(
-    groupBy: Optional[str] = None,
-    status: Optional[ResultEnum] = None,
+    groupBy: str = "partition.unit.brand.location.test",
+    status: Optional[str] = None,
+    # status: Optional[ResultEnum] = None,
     view: Optional[str] = None,
 ):
-    if not groupBy:
-        groupBy = DEFAULT_GROUPING
     group_order = groupBy.split(".")
-    for group in group_order:
-        if group not in ["brand", "partition", "unit", "location", "test"]:
+    for i, group in enumerate(group_order):
+        if group not in ["brand", "partition", "unit", "location", "test", "test_suit"]:
             raise HTTPException(
                 status_code=400, detail=f"Not valid group name: {group}"
             )
+        if group == "test":
+            group_order[i] = "test_suit"
     if view and view != "all":
         raise HTTPException(status_code=400, detail="view can be only equal 'all'")
     return {"group_order": group_order, "status": status, "view_all": view}
-
-
-router = APIRouter(tags=["status"])
-
-
-@router.get("/api/v1/tests")
-async def get_tests():
-    return status_service.get_tests()
-
-
-@router.get("/status-json", response_model=ReportResponse)
-async def get_status_json(query: dict = Depends(report_request_verification)):
-    return status_service.get_report(**query)
-
-
-@router.post("/api/v1/test-report")
-async def add_test(test: TestResult):
-    return await status_service.add_test_result(test)

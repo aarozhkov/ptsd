@@ -1,3 +1,4 @@
+from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from pydantic import BaseModel, HttpUrl
 from typing import List, Dict, Optional
@@ -6,7 +7,7 @@ import asyncio
 import random
 
 from scheduler.core.config import ConveerSettings
-from services.versionchecker import VersionChecker
+from scheduler.core.version_checker import VersionChecker
 from shared.models.account import Account
 from httpx import AsyncClient
 from enum import Enum
@@ -34,7 +35,7 @@ class PTRTask(BaseModel):
     notify_on_complete: bool
     ptr_index: Optional[int]  # Backward compatibility
     # there is no such thing in original but how i can achive that?
-    notify_url: Optional[str]
+    # notify_url: Optional[str]
 
     class config:
         alias_generator = to_camel
@@ -48,19 +49,20 @@ class ResultEnum(Enum):  # From java test stdout on PTR side
 class PtrOutcome(BaseModel):
     """Standard callback notification Payload in PTR"""
 
-    test_id: str
+    name: str
     status: ResultEnum
     call_id: Optional[str]
     reason: Optional[str]
-    duration: int
+    # duration: int FIXME: conveer WILL calculate this!!!
+    # FIXME: conveer must fixate startTime before send test task!!!
 
     class config:
         alias_generator = to_camel
 
 
 class PTRResult(BaseModel):
-    ptr_test_id: str
-    ptr_index: int
+    ptr_test_id: str  # this is generated on PTR
+    ptr_index: int  # Returns back from PTR task request
     outcomes: List[PtrOutcome]
 
     class config:
@@ -82,7 +84,7 @@ class Conveer:
         ptr_addresses: List[HttpUrl],
         location: str,
         max_test_in_progress: int,
-        version_checker: Optional[VersionChecker],
+        version_checker: Optional[VersionChecker] = None,
         logger: Optional[logging.Logger] = None,
     ):
         self.q = task_queue
@@ -90,6 +92,10 @@ class Conveer:
         self.ptd_addresses = ptd_addresses
         self.ptr_addresses = ptr_addresses
         self.location = location
+        # FIXME: For backward compitability with PTR
+        #        and conveer identation on notifications will use uniq Conveer id
+        #        it will be INT to feet ptrIndex type restrictions
+        self.conveer_id = hash(location) % 10 ** 4
         self.name = f"conveer_{location}"
         self.max_test_in_progress = max_test_in_progress
         self.tests: Dict[str, List] = dict(
@@ -109,9 +115,7 @@ class Conveer:
         self.log.debug("Got task: %s" % task)
         return task
 
-    async def _gen_ptr_request(
-        self, ptr, ptd, task: TestTask, account: Account
-    ) -> PTRTask:
+    async def _gen_ptr_request(self, ptd, task: TestTask, account: Account) -> PTRTask:
         # FIXME try catch if version will not work?
         version = await self.version_checker.get_version(task.brand_url)
         return PTRTask(
@@ -123,8 +127,8 @@ class Conveer:
             password=account.password,
             test_suite=task.test_suit,
             notify_on_complete=True,
-            notify_url="127.0.0.1:8080",
-            ptr_index=ptr,
+            # notify_url="127.0.0.1:8080",
+            ptr_index=self.conveer_id,
         )
 
     async def _push_to_ptr(
@@ -148,6 +152,14 @@ class Conveer:
         """get result notification from ptr"""
         self.log.debug("Got notification for: %s", test_result)
 
+    async def get_notification_legacy(self, test_result: PTRResult):
+        """get result notification from ptr"""
+        if test_result.ptr_index != self.conveer_id:
+            return False
+        self.log.debug("Got callback notification for: %s", test_result)
+        # TODO implement send to Status
+        # TODO implement test duration calculation
+
     async def _add_task(self, ptd):
         """Check tasks in progress for each ptd
         Send task if test in progress not reach maximum
@@ -166,7 +178,7 @@ class Conveer:
         self.log.debug("Task: %s in progress for %s", task.id, ptd)
         # FIXME: must use first available. How to implement this?
         ptr = self._get_ptr()
-        ptr_task = await self._gen_ptr_request(ptr, ptd, task, account)
+        ptr_task = await self._gen_ptr_request(ptd, task, account)
         task_pushed = await self._push_to_ptr(ptr, ptd, account, ptr_task)
         if not task_pushed:
             # FIXME send notification aboutfailed task
@@ -197,26 +209,39 @@ class Conveer:
 
 
 # FIXME somehow change GLOBAL state usage
-GLOBAL_CONVEER_STATE = {}
+GLOBAL_CONVEER_STATE: List[Conveer] = []
 
 
 def init_conveers(
     config: ConveerSettings, task_queue: AbstractTaskQueue, accounteer: Accounteer
 ):
+    global GLOBAL_CONVEER_STATE
     for location in config.ptd_addresses:
-        GLOBAL_CONVEER_STATE[location] = Conveer(
-            task_queue=task_queue,
-            accounteer=accounteer,
-            ptd_addresses=config.ptd_addresses[location],
-            ptr_addresses=config.ptr_addresses,
-            location=location,
-            max_test_in_progress=config.max_test_in_progress,
-            version_checker=VersionChecker(),
+        GLOBAL_CONVEER_STATE.append(
+            Conveer(
+                task_queue=task_queue,
+                accounteer=accounteer,
+                ptd_addresses=config.ptd_addresses[location],
+                ptr_addresses=config.ptr_addresses,
+                location=location,
+                max_test_in_progress=config.max_test_in_progress,
+                version_checker=VersionChecker(),
+            )
         )
 
-conveer_router = APIRouter(tags="conveer notification")
+
+conveer_router = APIRouter(tags=["conveer", "ptr"])
+
 
 @conveer_router.post("/test-completed")
-def test_notification(test_result: PTRResult):
+async def legacy_test_notification(test_result: PTRResult):
+    for conveer in GLOBAL_CONVEER_STATE:
+        if await conveer.get_notification_legacy(test_result):
+            return {"success": True}
+    raise HTTPException(status_code=404, detail="No test requester found for this test")
 
 
+# Callback for adapter.
+# @conveer_router.post("/api/v1/callback/{id}")
+# async def test_callback(id: int)
+# TODO: implement calback function for different conveers?

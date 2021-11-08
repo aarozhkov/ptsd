@@ -1,24 +1,28 @@
 from tortoise.models import Model
-from tortoise.contrib.pydantic import pydantic_model_creator
+from tortoise.contrib.pydantic.creator import pydantic_model_creator
+from tortoise.contrib.fastapi import register_tortoise
 from tortoise import fields
+
 from .base import ReportStorageCRUD
 from shared.models.task import TestResult
-from typing import List, Any, Optional, Dict
+from typing import List, Union, Optional, Dict, Any
+from status.config import SQLStorageSettings
 
 
 class TestResultORM(Model):
     # TODO can we just extend TestTask?
     test_id = fields.IntField(pk=True)  # make it uuid
     brand = fields.CharField(max_length=255)
+    test_suit = fields.CharField(max_length=255)
     location = fields.CharField(max_length=255)
     partition = fields.CharField(max_length=255)
     unit = fields.CharField(max_length=255)
     allure_link = fields.CharField(max_length=255)
     log_link = fields.CharField(max_length=255)
     ptr_address = fields.CharField(max_length=255)
-    date_time = fields.DatetimeField()
+    date_time = fields.DatetimeField(use_tz=False, timezone="UTC")
     status = fields.CharField(max_length=255)
-    reason = fields.CharField(max_length=255)
+    reason: str = fields.CharField(max_length=255)
     duration = fields.IntField()
 
     class Meta:
@@ -51,10 +55,10 @@ class SQLStorageCRUD(ReportStorageCRUD):
 
     @classmethod
     def _convert_models(
-        cls, orm_schemas: Any[List[TestResultSchema], TestResultSchema]
-    ) -> Any[List[TestResult], TestResult]:
+        cls, orm_schemas: Union[List[TestResultSchema], TestResultSchema]
+    ) -> Any:
         """This is a sync method which work with already asyncly fetched data"""
-        if isinstance(list, orm_schemas):
+        if isinstance(orm_schemas, List):
             return [TestResult.parse_obj(obj) for obj in orm_schemas]
         return TestResult.parse_obj(orm_schemas)
 
@@ -102,3 +106,14 @@ class SQLStorageCRUD(ReportStorageCRUD):
         """Add new test report to storage"""
         obj = await self.model.create(**report.dict(exclude_unset=True))
         return self._convert_models(await self.schema.from_tortoise_orm(obj))
+
+
+def db_init(app):
+    settings = SQLStorageSettings()
+    register_tortoise(
+        app,
+        db_url=settings.db_connection_url,
+        modules={"models": ["status.storages.sql_store"]},
+        generate_schemas=True,
+        add_exception_handlers=True,
+    )

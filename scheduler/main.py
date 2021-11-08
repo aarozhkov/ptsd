@@ -7,7 +7,7 @@ from scheduler.core.accounteer import LocalAccounteer
 from .core.config import config
 from .core.scheduler import Scheduler
 from .core.queue import AsyncInMemoryQ
-from .core.conveer import Conveer, coveer_route, init_conveers
+from .core.conveer import conveer_router, init_conveers
 
 
 def init_services():
@@ -31,7 +31,7 @@ def init():
         buckets=[0.1, 0.25, 0.5],
     )
     app.add_route("/metrics", handle_metrics)
-    app.include_router("/", coveer_route)
+    app.include_router(conveer_router)
 
 
 @app.on_event("startup")
@@ -39,7 +39,8 @@ async def set_services():
     # FIXME: set separate functions
     scheduler, conveers = init_services()
     scheduler.run()
-    for key,value in conveers
+    for conveer in conveers:
+        conveer.run()
 
 
 @app.on_event("shutdown")

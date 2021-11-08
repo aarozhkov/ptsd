@@ -1,5 +1,4 @@
 from pydantic import BaseModel, HttpUrl
-from enum import Enum
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -12,9 +11,9 @@ class TestTask(BaseModel):
     test_suit: str
 
 
-class ResultEnum(Enum):  # From java test stdout on PTR side
-    passed = "PASSED"
-    failed = "FAILED"
+# class ResultEnum(str, Enum):  # From java test stdout on PTR side
+#     passed = "PASSED"
+#     failed = "FAILED"
 
 
 class TestResult(BaseModel):
@@ -29,6 +28,7 @@ class TestResult(BaseModel):
     log_link: Optional[HttpUrl]
     ptr_address: str  # check if we still need it? It is a part of logs at least
     date_time: datetime  # isoformat
-    status: ResultEnum
+    status: str
+    # status: ResultEnum
     reason: Optional[str]
     duration: int
