@@ -1,29 +1,34 @@
-import asyncio
 from fastapi import FastAPI
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from scheduler.core.accounteer import LocalAccounteer
 
 
 from .core.config import config
-from .core.scheduler import Scheduler
+from .core.scheduler import init_scheduler
 from .core.queue import AsyncInMemoryQ
-from .core.conveer import conveer_router, init_conveers
+from .core.conveer import init_conveers
+import logging
 
 
-def init_services():
+def init_logging():
+    # log_levels = {
+    #     "info": logging.INFO,
+    #     "debug": logging.DEBUG,
+    #     "warning": logging.WARN
+    # }
+    # log_level = args.log_level or os.environ.get("LOG_LEVEL", "info")
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s %(module)s - %(message)s", level=logging.DEBUG
+    )
+
+
+def init_application():
+    init_logging()
     if not config.accounteer:
         raise Exception("No config for LocalAccounteer service")
     if not config.scheduler or not config.conveer:
         raise Exception("No config for Scheduler and Conveer %s", config)
-    task_queue = AsyncInMemoryQ(max_len=config.queue.task_queue_maxlen)
-    accounteer = LocalAccounteer(accounts=config.accounteer.accounts)
-    scheduler = Scheduler(queue=task_queue, **config.scheduler.dict())
-    conveers = init_conveers(config.conveer, task_queue, accounteer)
-    return scheduler, conveers
-
-
-def init():
-    app = FastAPI(title="scheduler")
+    app = FastAPI(title="scheduler_conveers")
     app.add_middleware(
         PrometheusMiddleware,
         app_name="scheduler",
@@ -31,19 +36,17 @@ def init():
         buckets=[0.1, 0.25, 0.5],
     )
     app.add_route("/metrics", handle_metrics)
-    app.include_router(conveer_router)
+    task_queue = AsyncInMemoryQ(max_len=config.queue.task_queue_maxlen)
+    accounteer = LocalAccounteer(accounts=config.accounteer.accounts)
+    init_scheduler(app=app, config=config.scheduler, queue=task_queue)
+    init_conveers(
+        app=app, config=config.conveer, task_queue=task_queue, accounteer=accounteer
+    )
+    return app
 
 
-@app.on_event("startup")
-async def set_services():
-    # FIXME: set separate functions
-    scheduler, conveers = init_services()
-    scheduler.run()
-    for conveer in conveers:
-        conveer.run()
+app = init_application()
 
 
-@app.on_event("shutdown")
-async def clean_services():
-    for task in asyncio.Task.all_tasks():
-        task.cancel()
+if __name__ == "__main__":
+    raise Exception("Straight run not implemented. Use uvicorn:...app for run")

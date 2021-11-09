@@ -18,7 +18,7 @@ class TestTask(BaseModel):
 
 class TestResult(BaseModel):
     # TODO can we just extend TestTask?
-    test_id: int  # make it uuid
+    test_id: UUID  # make it uuid
     test_suit: str
     brand: str
     location: str

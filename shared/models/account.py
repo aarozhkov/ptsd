@@ -7,3 +7,8 @@ class Account(BaseModel):
     phone_or_email: str
     extension: Optional[int]
     password: SecretStr
+
+    class Config:
+        json_encoders = {
+            SecretStr: lambda v: v.get_secret_value() if v else None,
+        }

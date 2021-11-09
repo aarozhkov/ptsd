@@ -11,7 +11,7 @@ from status.config import SQLStorageSettings
 
 class TestResultORM(Model):
     # TODO can we just extend TestTask?
-    test_id = fields.IntField(pk=True)  # make it uuid
+    test_id = fields.CharField(max_length=255, pk=True)  # make it uuid
     brand = fields.CharField(max_length=255)
     test_suit = fields.CharField(max_length=255)
     location = fields.CharField(max_length=255)
@@ -67,6 +67,7 @@ class SQLStorageCRUD(ReportStorageCRUD):
         # TODO Check if we need this? With ORM it is a dirty hack
         # TODO Validation of fields?
         #       tortoise can raise FieldError exception. Should it be catched?
+        #       tortoise FastAPI integration does not regester this exception
         unsorted = await self.model.all().values(*fields)
         result = {}
         for field in fields:

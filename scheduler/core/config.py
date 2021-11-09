@@ -8,7 +8,7 @@ from scheduler.core.utils import parse_accounts
 
 
 class QueueSettings(BaseSettings):
-    task_queue_maxlen: int = 1
+    task_queue_maxlen: int = 1000
 
 
 class SchedulerSettings(BaseSettings):
@@ -37,10 +37,10 @@ class YamlConfig(YamlModel):
 
 class YamlAccountsConfig(YamlModel):
     # FIXME need to add config validation
-    accounts: Dict[str, Dict]
+    accounts: Dict[str, List]
 
 
-class FlagsSettings(BaseModel):
+class FlagsSettings(BaseSettings):
     """Component behavior flags"""
 
     # TODO: factory for scheduler implementation
@@ -54,7 +54,7 @@ class FlagsSettings(BaseModel):
 
 
 class ComponentSettings(BaseModel):
-    queue = QueueSettings
+    queue: QueueSettings = QueueSettings()
     scheduler: Optional[SchedulerSettings] = None
     conveer: Optional[ConveerSettings] = None
     accounteer: Optional[AccounteerSettings] = None

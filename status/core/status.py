@@ -19,6 +19,15 @@ TEST_COUNT = Counter(
 
 
 def check_expiration(test_date: datetime, expiration: int) -> bool:
+    print(
+        "This is delta: ",
+        datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration),
+        "test date",
+        test_date,
+        "result:",
+        datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration)
+        > test_date,
+    )
     return (
         datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration)
         > test_date
@@ -121,7 +130,7 @@ class Status:
             if any(
                 [
                     check_expiration(test.date_time, self.report_expiration),
-                    not view_all,
+                    view_all,
                 ]
             ):
                 continue
