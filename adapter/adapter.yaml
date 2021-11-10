@@ -1,6 +1,13 @@
 dirs:
   resultsDir: '/app/results'
   buildsDir: '/app/builds'
+fileStorage:
+  type: 's3'
+  s3:
+    awsAccessKeyId: ''
+    awsSecretAccessKey: ''
+    regionName: 'eu-central-1'
+    bucketName: 'ptsd-reports'
 testTimeout: 300
 testSuites:
   allTests:

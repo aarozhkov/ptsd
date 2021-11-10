@@ -13,7 +13,7 @@ import adapter.main
   "password": "Test!123",
   "test_suite": "video",
   "notify_on_complete": true,
-  "test_id": 0
+  "test_id": 111
 }
 """
 

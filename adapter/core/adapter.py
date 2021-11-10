@@ -1,8 +1,10 @@
 import pathlib
 import subprocess
+import os.path
 
 from shared.core.yamlparser import YamlParser
 from shared.core.log import Log
+from adapter.core.filestorage import FileStorage
 
 log = Log("DEBUG")
 
@@ -19,7 +21,7 @@ class Adapter:
     def getTestLog(testId):
         return True
 
-    def generateAllureReport(self, config, workDirectory):
+    def generateAllureReport(self, config, testId, workDirectory):
         result = subprocess.run(
             ["allure", "generate", f"{workDirectory}/target/allure-results", "-o", f"{workDirectory}/allure"],
             stdout=subprocess.PIPE,
@@ -29,7 +31,18 @@ class Adapter:
         with open(workDirectory + "/stdout.log", "a+") as f:
             f.write(result.stdout.decode("utf-8"))
             f.close()
-        return result
+
+        try:
+            allureReportIndex = pathlib.Path(workDirectory + "/allure/index.html")
+            allureReportIndex.resolve(strict=True)
+        except FileNotFoundError:
+            log.debug("FileNotFoundError: allure problem")
+            return ""
+        else:
+            log.debug("Allure OK. Try Upload to s3")
+            fs = FileStorage(config)
+            reportUrl = fs.upload_directory(workDirectory, testId)
+            return reportUrl
 
     def runJars(self, XMLLocation, config, workDirectory):
         buildsDirectory = config["dirs"]["buildsDir"]
@@ -89,10 +102,9 @@ class Adapter:
         # TODO move to s3, add exceptions
         current_test_directory = config["dirs"]["resultsDir"] + "/" + str(testId)
         xmlLocation = current_test_directory + "/testng.xml"
-        log.debug(xmlLocation)
         self.runJars(xmlLocation, config, current_test_directory)
-        self.generateAllureReport(config, current_test_directory)
-        self.callBackFunction()
+        reportResult = self.generateAllureReport(config, testId, current_test_directory)
+        # self.callBackFunction(reportResult)
         return testId
 
     def initTestNg(self, data, config):
