@@ -12,14 +12,13 @@ RUN apt update && apt install -y --no-install-recommends openjdk-11-jre-headless
 
 COPY requirements.txt .
 
-RUN pip install -r requirements.txt
-
 RUN useradd -U -s /bin/false app
+RUN pip install -r requirements.txt --no-cache-dir
+
 USER app
 
-COPY shared /app/
-COPY supervisor /app/
-COPY adapter /app/
+COPY . /app/
+
 
 EXPOSE 8112-8113
 

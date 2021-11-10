@@ -1,28 +1,10 @@
-import os
 import pathlib
 import subprocess
 
-import yaml
-from filelock import FileLock, Timeout
+from shared.core.yamlparser import YamlParser
 from shared.core.log import Log
 
 log = Log("DEBUG")
-
-
-class AdapterConfigParser:
-    def _parse_yaml(self, config):
-        with open(config, "r") as conf:
-            try:
-                data = yaml.safe_load(conf)
-            except yaml.YAMLError as e:
-                log.error("Parsing configuration failed with: " + repr(e))
-        return data
-
-    def parse(self, path):
-        data = self._parse_yaml(path)
-        log.debug(data)
-        return data
-
 
 class Adapter:
     def buildJars(self):
@@ -95,40 +77,10 @@ class Adapter:
             # TODO Add exception
             return False
 
-    def getNextTestId(self, path):
-        file_path = path + "/test.increment"
-        lock_path = path + "/test.increment.lock"
 
-        lock = FileLock(lock_path, timeout=1)
-
-        with lock:
-            last_id = 0
-
-            if os.path.exists(file_path):
-                with open(file_path, "r+") as f:
-                    last_id = f.read()
-                    if last_id.isdigit() == True:
-                        last_id = int(last_id)
-                    else:
-                        last_id = 0
-                    f.close()
-            else:
-                last_id = 0
-
-            if last_id > 0:
-                next_id = last_id + 1
-            else:
-                next_id = 1
-
-            with open(file_path, "w") as f:
-                f.write(str(next_id))
-                f.close()
-
-        return next_id
-
-    def prepareDirectory(self, XML, config):
+    def prepareDirectory(self, XML, data, config):
         self.createDirectory(config["dirs"]["resultsDir"])
-        testId = self.getNextTestId(config["dirs"]["resultsDir"])
+        testId = data.test_id
         current_test_directory = self.createDirectory(config["dirs"]["resultsDir"], testId)
         self.saveTestNGXML(current_test_directory, XML)
         return testId
@@ -140,7 +92,7 @@ class Adapter:
         log.debug(xmlLocation)
         self.runJars(xmlLocation, config, current_test_directory)
         self.generateAllureReport(config, current_test_directory)
-
+        self.callBackFunction()
         return testId
 
     def initTestNg(self, data, config):
@@ -190,5 +142,5 @@ class Adapter:
 
 
 if __name__ == "__main__":
-    parser = AdapterConfigParser()
+    parser = YamlParser()
     config = parser.parse("adapter/adapter.yaml")

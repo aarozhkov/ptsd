@@ -3,14 +3,14 @@ from fastapi import BackgroundTasks, Response
 from fastapi.responses import JSONResponse
 from shared.core.webserver import SomeFastApiApp
 from shared.models.adapter import TestRequest
+from shared.core.yamlparser import YamlParser
 
 from adapter.core import adapter
 
 adapter_api = SomeFastApiApp(app_name="adapter")
-parser = adapter.AdapterConfigParser()
 adapter = adapter.Adapter()
+parser = YamlParser()
 config = parser.parse("adapter/adapter.yaml")
-
 
 @adapter_api.get("/status")
 async def adapter_status():
@@ -21,7 +21,7 @@ async def adapter_status():
 async def checkAndRun(data: TestRequest, background_tasks: BackgroundTasks):
     try:
         XML = adapter.initTestNg(data, config)
-        testId = adapter.prepareDirectory(XML, config)
+        testId = adapter.prepareDirectory(XML, data, config)
         background_tasks.add_task(adapter.startPipeline, testId, config)
         return JSONResponse(status_code=418, content={"success": True, "ptrTestId": testId})
     except:
@@ -35,7 +35,7 @@ async def checkAndRun(data: TestRequest, background_tasks: BackgroundTasks):
 async def checkAndRunXML(data: TestRequest, background_tasks: BackgroundTasks):
     try:
         XML = adapter.initTestNg(data, config)
-        testId = adapter.prepareDirectory(XML, config)
+        testId = adapter.prepareDirectory(XML, data, config)
         background_tasks.add_task(adapter.startPipeline, testId, config)
         return Response(XML, media_type="application/xml")
     except:

@@ -37,4 +37,4 @@ yarl==1.5.1
 uvicorn==0.15.0
 fastapi==0.70.0
 xmljson==0.2.1
-filelock==3.3.1
+pyyaml==5.4.1
