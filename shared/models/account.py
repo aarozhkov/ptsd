@@ -1,10 +1,9 @@
-from pydantic import BaseModel
-from typing import List, Optional
-
+from pydantic import BaseModel, SecretStr
+from typing import Optional
 
 
 class Account(BaseModel):
+    brand: str
     phone_or_email: str
-    extension: List[int]
-    password: str
-
+    extension: Optional[int]
+    password: SecretStr

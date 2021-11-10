@@ -1,0 +1,120 @@
+{
+    "RC-Commercial": [
+        {
+            "phoneOrEmail": "14706495518",
+            "extension": "101-111",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "19167504977",
+            "extension": "105",
+            "password": "Test!123",
+            "partition": "us-01"
+        }
+    ],
+    "Phoenix": [
+        {
+            "phoneOrEmail": "mm5+3019604@ag20210224124338-2456.dins.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+2@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+3@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+4@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+5@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+6@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+7@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+8@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+9@nordigy.ru",
+            "password": "Test!123"
+        },
+        {
+            "phoneOrEmail": "phoenix+uptc+pod21+user+10@nordigy.ru",
+            "password": "Test!123"
+        }
+    ],
+    "Avaya": [
+        {
+            "phoneOrEmail": "14696499686",
+            "extension": "101-110",
+            "password": "Test!123"
+        }
+    ],
+    "Atos": [
+        {
+            "phoneOrEmail": "33187392796",
+            "extension": "301-311",
+            "password": "Test!123"
+        }
+    ],
+    "Alcatel": [
+        {
+            "phoneOrEmail": "33180208173",
+            "extension": "301-311",
+            "password": "Test!123"
+        }
+    ],
+    "ATT": [
+        {
+            "phoneOrEmail": "14639007932",
+            "extension": "101-111",
+            "password": "Test!123"
+        }
+    ],
+    "RC-Account": [
+        {
+            "phoneOrEmail": "18887533251",
+            "extension": "101-110",
+            "password": "123qwe!@#QWE"
+        }
+    ],
+    "Verizon": [
+        {
+            "phoneOrEmail": "+14706503610",
+            "extension": "101-110",
+            "password": "Test!123"
+        }
+    ],
+    "Telus": [
+        {
+            "phoneOrEmail": "+18449391618",
+            "extension": "101-110",
+            "password": "Test!123"
+        }
+    ],
+    "BT": [
+        {
+            "phoneOrEmail": "+441135314245",
+            "extension": "301-310",
+            "password": "Test!123"
+        }
+    ],
+    "Vodafone": [
+        {
+            "phoneOrEmail": "+448081642359",
+            "extension": "301-311",
+            "password": "Acpt!123"
+        }
+    ]
+}
