@@ -10,6 +10,9 @@ from status.config import StatusSettings
 from shared.models.task import TestResult
 from status.storages.base import ReportStorageCRUD
 from status.storages.sql_store import SQLStorageCRUD
+import logging
+
+logger = logging.getLogger(__name__)
 
 TEST_COUNT = Counter(
     "ptl_test_result_count_total",
@@ -19,6 +22,15 @@ TEST_COUNT = Counter(
 
 
 def check_expiration(test_date: datetime, expiration: int) -> bool:
+    print(
+        "This is delta: ",
+        datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration),
+        "test date",
+        test_date,
+        "result:",
+        datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration)
+        > test_date,
+    )
     return (
         datetime.utcnow().replace(tzinfo=UTC) - timedelta(minutes=expiration)
         > test_date
@@ -121,7 +133,7 @@ class Status:
             if any(
                 [
                     check_expiration(test.date_time, self.report_expiration),
-                    not view_all,
+                    view_all,
                 ]
             ):
                 continue

@@ -27,11 +27,7 @@ class AbstractTaskQueue(Protocol):
 class AsyncInMemoryQ:
     def __init__(self, max_len=100):
         QUEUE_MAXLEN.set(max_len)
-        self.queues_map = self._create_queues(max_len)
-
-    @classmethod
-    def _create_queues(cls, max_len):
-        return Queue(maxsize=max_len)
+        self.queues_map = Queue(maxsize=max_len)
 
     async def push(self, task: TestTask):
         await self.queues_map.put(task)

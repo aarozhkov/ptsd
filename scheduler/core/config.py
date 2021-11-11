@@ -8,7 +8,7 @@ from scheduler.core.utils import parse_accounts
 
 
 class QueueSettings(BaseSettings):
-    task_queue_maxlen: int = 1
+    task_queue_maxlen: int = 10
 
 
 class SchedulerSettings(BaseSettings):
@@ -19,10 +19,11 @@ class SchedulerSettings(BaseSettings):
     push_interval: int = 1
 
 
-class ConveerSettings(BaseModel):
+class ConveerSettings(BaseSettings):
     max_test_in_progress: int = 1
-    ptd_addresses: Dict[str, List[HttpUrl]]
-    ptr_addresses: List[HttpUrl]
+    status_notify: str = "http://localhost:8101/api/v1/test-report"
+    ptd_addresses: Dict[str, List[str]]
+    ptr_addresses: List[str]
 
 
 class AccounteerSettings(BaseModel):
@@ -31,16 +32,16 @@ class AccounteerSettings(BaseModel):
 
 class YamlConfig(YamlModel):
     brands: Optional[List[Brand]]
-    ptd_addresses: Dict[str, List[HttpUrl]]
-    ptr_addresses: List[HttpUrl]
+    ptd_addresses: Dict[str, List[str]]
+    ptr_addresses: List[str]
 
 
 class YamlAccountsConfig(YamlModel):
     # FIXME need to add config validation
-    accounts: Dict[str, Dict]
+    accounts: Dict[str, List]
 
 
-class FlagsSettings(BaseModel):
+class FlagsSettings(BaseSettings):
     """Component behavior flags"""
 
     # TODO: factory for scheduler implementation
@@ -54,7 +55,7 @@ class FlagsSettings(BaseModel):
 
 
 class ComponentSettings(BaseModel):
-    queue = QueueSettings
+    queue: QueueSettings = QueueSettings()
     scheduler: Optional[SchedulerSettings] = None
     conveer: Optional[ConveerSettings] = None
     accounteer: Optional[AccounteerSettings] = None

@@ -1,10 +1,9 @@
 from fastapi import FastAPI, BackgroundTasks, Response
-from models.tests import PtrOutcome
-from scheduler.core.conveer import PTRResult, PTRTask
+from scheduler.core.conveer import PTRResult, PTRTask, PtrOutcome
 import random
 import requests
 import logging
-from uuid import UUID
+from uuid import uuid4
 import asyncio
 from starlette.config import Config
 from starlette import datastructures
@@ -37,26 +36,32 @@ def random_result():
 
 def send_notification(notification_url: str, ptr_result: PTRResult):
     try:
-        result = requests.post(notification_url, json=ptr_result.json())
+        result = requests.post(
+            notification_url,
+            headers={"Content-Type": "application/json"},
+            data=ptr_result.json(),
+        )
         result.raise_for_status()
         return
     except Exception as e:
-        logger.exception("Notification failed, ", e)
+        logger.exception("Notification failed, ", e, result.content)
         return
 
 
-async def test_result_generator(test_id: int, task: PTRTask):
-    status = (random_result(),)
+def generate_test(test_id, task: PTRTask) -> PTRResult:
+    status = random_result()
     part, unit = random_partition_unit()
-    call_id = f"{UUID()}!{unit}@{part}"
+    call_id = f"{uuid4()}!{unit}@{part}"
     outcome = PtrOutcome(
         name=task.test_suite, status=status, call_id=call_id, reason=""
     )
-    result = PTRResult(
-        ptr_test_id=test_id, ptr_index=task.ptr_index, outcomes=[outcome]
-    )
-    await asyncio.sleep(60 + (30 + random.random()))
-    send_notification(NOTIFICATION_CALLBACK, result)
+    return PTRResult(ptr_test_id=test_id, ptr_index=task.ptr_index, outcomes=[outcome])
+
+
+async def test_result_generator(ptr_result: PTRResult):
+    await asyncio.sleep(60 + (30 * random.random()))
+    logger.warning("Notify about: %s to %s", ptr_result, NOTIFICATION_CALLBACK)
+    send_notification(NOTIFICATION_CALLBACK, ptr_result)
     return
 
 
@@ -67,6 +72,7 @@ def dummy_test(task: PTRTask, response: Response, background_tasks: BackgroundTa
         return {"message": "I am busy. Fuck off!"}
     global TEST_ID
     TEST_ID += 1
-    background_tasks.add_task(test_result_generator, TEST_ID, task)
+    ptr_result = generate_test(TEST_ID, task)
+    background_tasks.add_task(test_result_generator, ptr_result)
     response.status_code = 200
-    return
+    return {"success": True, "statusCode": 200, "ptrTestId": ptr_result.ptr_test_id}

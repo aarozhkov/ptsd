@@ -27,7 +27,6 @@ class VersionChecker:
         result = await self.get_version_asyncly(brand_endpoint)
         self.cache[brand_endpoint] = {"hit_count": 1, "value": result}
 
-        print(self.cache)
         return result
 
     async def get_version_asyncly(self, brand_endpoint: str) -> str:

@@ -1,10 +1,14 @@
+from fastapi.applications import FastAPI
+
+from scheduler.core.config import SchedulerSettings
 from .queue import AbstractTaskQueue
 from shared.models.brand import Brand
 from shared.models.task import TestTask
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 import random
 import asyncio
+import logging
 
 
 class SchedulerException(Exception):
@@ -13,14 +17,17 @@ class SchedulerException(Exception):
 
 class Scheduler:
     def __init__(
-        self, queue: AbstractTaskQueue, brands: List[Brand], push_interval: int = 1
+        self,
+        queue: AbstractTaskQueue,
+        brands: List[Brand],
+        push_interval: int = 1,
+        logger: Optional[logging.Logger] = None,
     ):
         self.q = queue
-        self.brands = (
-            brands  # We have to save brands. Task must be filled with brand url.
-        )
+        self.brands: List[Brand] = brands
         self.bucket = self.create_bucket(brands)
         self.push_interval = push_interval
+        self.log = logger if logger else logging.getLogger(self.__class__.__name__)
         # To prevent run several pusher tasks outside Scheduler class
         self._runned_task = None
 
@@ -52,9 +59,14 @@ class Scheduler:
         """Run pusher task if not yet runned"""
         if self._runned_task:
             raise SchedulerException("Scheduler pusher already runned")
-        self._runned_task = asyncio.create_task(
-            self.pusher(), name="scheduler-task-pusher"
-        )
+        loop = asyncio.get_event_loop()
+        self._runned_task = loop.create_task(self.pusher())
+        self.log.debug("Scheduler runned %s", self._runned_task)
+
+    def stop(self):
+        if self._runned_task:
+            self._runned_task.cancel()
+        return
 
     def _get_randomly(self):
         num = random.random() * len(self.bucket)
@@ -62,6 +74,7 @@ class Scheduler:
 
     async def pusher(self):
         # FIXME: can it be runned without endless loop? Hard to test and control
+        self.log.debug("asdasd")
         while True:
             try:
                 await asyncio.sleep(self.push_interval)
@@ -70,3 +83,17 @@ class Scheduler:
                 self._runned_task = None
                 break
                 # log task canceletion
+
+
+def init_scheduler(app: FastAPI, config: SchedulerSettings, queue: AbstractTaskQueue):
+    scheduler = Scheduler(
+        queue=queue, brands=config.brands, push_interval=config.push_interval
+    )
+
+    @app.on_event("startup")
+    async def run_scheduler():
+        scheduler.run()
+
+    @app.on_event("shutdown")
+    def stop_scheduler():
+        scheduler.stop()
