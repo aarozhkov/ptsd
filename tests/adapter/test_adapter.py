@@ -7,15 +7,13 @@ import adapter.main
 {
   "version": "0.1",
   "url": "https://v.ringcentral.com",
-  "ptdAddress": "http://iad41-c04-ptd01:4444",
-  "phoneOrEmail": "18887533251",
-  "extension": "101-110",
-  "password": "123qwe!@#QWE",
-  "testSuite": "video",
-  "convName": "sjc_1",
-  "targetPartitionUnit": "us-01@sjc01:10",
-  "notifyOnComplete": true,
-  "ptrIndex": 0
+  "ptd_address": "http://iad41-c04-ptd01:4444",
+  "phone_or_email": "14706495518",
+  "extension": "101",
+  "password": "Test!123",
+  "test_suite": "video",
+  "notify_on_complete": true,
+  "test_id": 111
 }
 """
 
@@ -25,14 +23,13 @@ async def data():
     data = {
         "version": "0.1",
         "url": "https://v.ringcentral.com",
-        "ptdAddress": "http://iad41-c04-ptd01:4444",
-        "phoneOrEmail": "18887533251",
-        "extension": "101-110",
-        "password": "123qwe!@#QWE",
-        "testSuite": "video",
-        "convName": "sjc_1",
-        "notifyOnComplete": True,
-        "ptrIndex": 0
+        "ptd_address": "http://iad41-c04-ptd01:4444",
+        "phone_or_email": "14706495518",
+        "extension": "101",
+        "password": "Test!123",
+        "test_suite": "video",
+        "notify_on_complete": True,
+        "test_id": 0
     }
     yield data
 

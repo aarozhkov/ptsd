@@ -5,3 +5,16 @@ pycache
 .cache
 .mypy_cache
 .pytest_cache
+.vscode
+# tests/
+results/
+builds/
+**/*.log
+**/*.md
+orm.db*
+docker-compose.yml
+.gitlab-ci.yml
+.dockerignore
+.gitignore
+Dockerfile
+requirements-dev.txt
