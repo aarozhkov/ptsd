@@ -2,79 +2,36 @@ from datetime import datetime
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
-from pydantic import BaseModel, HttpUrl, SecretStr
 from typing import List, Dict, Optional, Tuple
 import logging
 import asyncio
 import random
 from pytz import UTC
+from prometheus_client import Counter
 
 from scheduler.core.config import ConveerSettings
 from scheduler.core.version_checker import VersionChecker
 from shared.models.account import Account
-from httpx import AsyncClient
-from enum import Enum
+from httpx import AsyncClient, HTTPStatusError
 
 from shared.models.task import TestTask, TestResult
 from scheduler.core.accounteer import Accounteer
+from .ptr_schemas import PTRTask, PTRResult, PtrOutcome, ResultEnum
 from .queue import AbstractTaskQueue
-from .utils import to_camel
 
 """ This class is adapter between new architecture and old one with PTR """
 """ Class will repeat Conveyor service functionality in PTL """
 """ Grub task from Task Queue, grab additional information and send to PTR"""
 
+# TODO:
+# 1. Metrics for all failed tasks by PTSD fault
+# 2. Metrics task in porgress?
 
-class PTRTask(BaseModel):
-    version: str  # RCV release version for right uptc usage
-    url: str  # RCV web app endpoint url: v.ringcentral.com
-    ptd_address: str
-    phone_or_email: str
-    extension: Optional[int]
-    password: SecretStr
-    test_suite: str
-    target_partition_unit: Optional[str]
-    notify_on_complete: bool
-    ptr_index: Optional[int]  # Backward compatibility
-    # there is no such thing in original but how i can achive that?
-    # notify_url: Optional[str]
-
-    class Config:
-        alias_generator = to_camel
-        allow_population_by_field_name = True
-        json_encoders = {
-            SecretStr: lambda v: v.get_secret_value() if v else None,
-        }
-
-
-class ResultEnum(Enum):  # From java test stdout on PTR side
-    passed = "PASSED"
-    failed = "FAILED"
-
-
-class PtrOutcome(BaseModel):
-    """Standard callback notification Payload in PTR"""
-
-    name: str
-    status: ResultEnum
-    call_id: Optional[str]
-    reason: Optional[str]
-    # duration: int FIXME: conveer WILL calculate this!!!
-    # FIXME: conveer must fixate startTime before send test task!!!
-
-    class Config:
-        alias_generator = to_camel
-        allow_population_by_field_name = True
-
-
-class PTRResult(BaseModel):
-    ptr_test_id: str  # this is generated on PTR
-    ptr_index: int  # Returns back from PTR task request
-    outcomes: List[PtrOutcome]
-
-    class Config:
-        alias_generator = to_camel
-        allow_population_by_field_name = True
+TASK_FAILURES = Counter(
+    "conveer_task_failed",
+    "This metric count all task fails by internal conveer issues",
+    ["conveer_id", "task_id", "executor", "reason"],
+)
 
 
 class ConveerException(Exception):
@@ -88,11 +45,11 @@ class Conveer:
         self,
         task_queue: AbstractTaskQueue,
         accounteer: Accounteer,
-        ptd_addresses: List[HttpUrl],
-        ptr_addresses: List[HttpUrl],
+        ptd_addresses: List[str],
+        ptr_addresses: List[str],
         location: str,
         max_test_in_progress: int,
-        status_notify: str = "http://localhost:8090/api/v1/test-report",
+        status_notify: str,
         version_checker: Optional[VersionChecker] = None,
         logger: Optional[logging.Logger] = None,
     ):
@@ -126,6 +83,8 @@ class Conveer:
         """Extract partition and unit from meeting id"""
         # Legacy Outcomes cames as list but it is always just one result
         # call_id: ae112473-4eaf-4e24-8474-f654560f858f!us-03-sjc01@us-03
+        if not outcomes:
+            return None, None
 
         call_id = outcomes[0].call_id
         if not call_id:
@@ -143,9 +102,15 @@ class Conveer:
         ptr_test_id: str,
     ) -> TestResult:
         duration = (datetime.utcnow() - start_time).seconds
+        if ptr_result.outcomes:
+            status = ptr_result.outcomes[0].status.value
+            reason = ptr_result.outcomes[0].reason
+            allure_link = f"{ptr}/test/{ptr_test_id}/allure/"
+            log_link = f"{ptr}/test/{ptr_test_id}/log/"
+        else:
+            status, reason = ResultEnum.failed.value, None
+            allure_link, log_link = None, None
         partition, unit = self._extract_core(ptr_result.outcomes)
-        allure_link = f"{ptr}/test/{ptr_test_id}/allure/"
-        log_link = f"{ptr}/test/{ptr_test_id}/log/"
         await self.accounteer.release_account(reserved_account)
         return TestResult(
             test_id=task.id,
@@ -158,8 +123,8 @@ class Conveer:
             log_link=log_link,
             ptr_address=ptr,
             date_time=start_time.replace(tzinfo=UTC),
-            status=ptr_result.outcomes[0].status.value,
-            reason=ptr_result.outcomes[0].reason,
+            status=status,
+            reason=reason,
             duration=duration,
         )
 
@@ -177,55 +142,62 @@ class Conveer:
             url=task.brand_url,
             ptd_address=ptd,
             phone_or_email=account.phone_or_email,
-            extension=account.extension,
+            exTEnsion=account.extension,
             password=account.password,
             test_suite=task.test_suit,
+            conv_name=str(task.id),
             notify_on_complete=True,
-            # notify_url="127.0.0.1:8080",
             ptr_index=self.conveer_id,
         )
 
     async def _push_to_status(self, test_result: TestResult) -> bool:
         """Push task to provided ptr"""
         attempts = 3
+        self.log.debug(
+            self.status_notify, test_result.json(by_alias=True, exclude_unset=True)
+        )
         async with AsyncClient() as client:
-            while attempts > 0:
-                # FIXME because we use PASSWORD as secure
-                r = await client.post(
-                    self.status_notify,
-                    headers={"Content-Type": "application/json"},
-                    data=test_result.json(),
-                )
-                if r.status_code == 200:
+            while attempts >= 0:
+                try:
+                    # FIXME because we use PASSWORD as secure
+                    r = await client.post(
+                        self.status_notify,
+                        headers={"Content-Type": "application/json"},
+                        content=test_result.json(by_alias=True, exclude_unset=True),
+                    )
+                    r.raise_for_status
                     self.log.debug("Send test report to status service %s", r.content)
                     return True
-                if r.status_code == 529:
-                    attempts += 1
-                if r.status_code == 422:
-                    self.log.debug(r.content)
+                except HTTPStatusError as e:
+                    self.log.exception("Failed to deliver report", e)
                     return False
         return False
 
     async def _push_to_ptr(self, ptr: str, ptd: str, task: PTRTask) -> bool:
-        """Push task to provided ptr"""
-        attempts = 3
+        """Push task to provided ptr. Will retry on 529 from PTR."""
+        # FIXME: 529 should not be presented if max test capacity for ptr and conveer will be synced
+        sended = False
         async with AsyncClient() as client:
-            while attempts > 0:
-                # FIXME because we use PASSWORD as secure
-                r = await client.post(
-                    f"{ptr}/test",
-                    headers={"Content-Type": "application/json"},
-                    data=task.json(),
-                )
-                if r.status_code == 200:
+            while not sended:
+                try:
+                    # FIXME because of serialisation.
+                    # Have to use json. Probably we can add params to dict serialisation.
+                    r = await client.post(
+                        f"{ptr}/test",
+                        headers={"Content-Type": "application/json"},
+                        content=task.json(by_alias=True, exclude_unset=True),
+                    )
+                    r.raise_for_status()
                     self.log.debug(
-                        "Send task for %s to %s, used account: %s", ptd, ptr, r.content
+                        "Send task for %s to %s, responce: %s", ptd, ptr, r.content
                     )
                     return r.json().get("ptrTestId", None)
-                if r.status_code == 529:
-                    attempts += 1
-                if r.status_code == 422:
-                    self.log.debug(r.content)
+                except HTTPStatusError as exc:
+                    if exc.response.status_code == 529:
+                        await asyncio.sleep(5)
+                    else:
+                        self.log.exception("Got issues on PTR api call: %s", exc)
+                        return False
         return False
 
     async def get_notification(self, test_result: TestResult):
@@ -248,14 +220,12 @@ class Conveer:
                         notified,
                     )
                     return True
-        self.log.debug("Got to wrong place %s, %s", self.tasks, ptr_result)
+        self.log.debug("Got to wrong place %s, %s", self.tests, ptr_result)
         return False
-        # TODO implement send to Status
-        # TODO implement test duration calculation
 
     async def _add_task(self, ptd):
         """Check tasks in progress for each ptd
-        Send task if test in progress not reach maximum
+        Send task if tests in progress count not reach maximum
         """
         if len(self.tests[ptd]) >= self.max_test_in_progress:
             return
@@ -360,6 +330,7 @@ def init_conveers(
                 location=location,
                 max_test_in_progress=config.max_test_in_progress,
                 version_checker=VersionChecker(),
+                status_notify=config.status_notify,
             )
         )
     app.include_router(conveer_router)

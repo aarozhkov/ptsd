@@ -58,10 +58,10 @@ def generate_test(test_id, task: PTRTask) -> PTRResult:
     return PTRResult(ptr_test_id=test_id, ptr_index=task.ptr_index, outcomes=[outcome])
 
 
-async def test_result_generator(ptr_task: PTRTask):
+async def test_result_generator(ptr_result: PTRResult):
     await asyncio.sleep(60 + (30 * random.random()))
-    logger.warning("Notify about: %s to %s", ptr_task, NOTIFICATION_CALLBACK)
-    send_notification(NOTIFICATION_CALLBACK, ptr_task)
+    logger.warning("Notify about: %s to %s", ptr_result, NOTIFICATION_CALLBACK)
+    send_notification(NOTIFICATION_CALLBACK, ptr_result)
     return
 
 
@@ -72,7 +72,7 @@ def dummy_test(task: PTRTask, response: Response, background_tasks: BackgroundTa
         return {"message": "I am busy. Fuck off!"}
     global TEST_ID
     TEST_ID += 1
-    ptr_task = generate_test(TEST_ID, task)
-    background_tasks.add_task(test_result_generator, ptr_task)
+    ptr_result = generate_test(TEST_ID, task)
+    background_tasks.add_task(test_result_generator, ptr_result)
     response.status_code = 200
-    return {"success": True, "statusCode": 200, "ptrTestId": ptr_task.ptr_test_id}
+    return {"success": True, "statusCode": 200, "ptrTestId": ptr_result.ptr_test_id}

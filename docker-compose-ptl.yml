@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  dummy_ptr:
+    build:
+      context: .
+      dockerfile: ./tests/Dockerfile_ptr
+    ports:
+      - 8103:8103
+    environment:
+      - PTR_CALLBACK=http://scheduler:8102/test-completed
+
+  status:
+    build:
+      context: .
+      dockerfile: Dockerfile_status
+    volumes:
+      - ./databases:/app/database/
+    ports:
+      - 8101:8101
+    environment:
+      - DB_CONNECTION_URL=sqlite://database/orm.db
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: ./scheduler/Dockerfile
+    volumes:
+      - ./configs/:/app/configs
+    ports:
+      - 8102:8102
+    environment:
+      - YAML_CONFIG=configs/scheduler.yaml
+      - ACCOUNT_CONFIG=configs/accounts.yaml
+      - STATUS_NOTIFY=http://status:8101/api/v1/test-report
+
+  prometheus:
+    image: prom/prometheus:v2.1.0
+    volumes:
+      - ./configs/:/opt/configs/
+    command:
+      - '--config.file=/opt/configs/prom.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090

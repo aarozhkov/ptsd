@@ -10,6 +10,9 @@ from status.config import StatusSettings
 from shared.models.task import TestResult
 from status.storages.base import ReportStorageCRUD
 from status.storages.sql_store import SQLStorageCRUD
+import logging
+
+logger = logging.getLogger(__name__)
 
 TEST_COUNT = Counter(
     "ptl_test_result_count_total",

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from pydantic import BaseModel
+from typing import Optional, Union
 from datetime import datetime
 from uuid import UUID
 
@@ -22,13 +22,17 @@ class TestResult(BaseModel):
     test_suit: str
     brand: str
     location: str
-    partition: Optional[str]
-    unit: Optional[str]
-    allure_link: Optional[HttpUrl]
-    log_link: Optional[HttpUrl]
+    # partition: Union[str, None] = None
+    # unit: Union[str, None] = None
+    # allure_link: Union[str, None] = None
+    # log_link: Union[str, None] = None
+    partition: Optional[str] = None
+    unit: Optional[str] = None
+    allure_link: Optional[str] = None
+    log_link: Optional[str] = None
     ptr_address: str  # check if we still need it? It is a part of logs at least
     date_time: datetime  # isoformat
     status: str
     # status: ResultEnum
-    reason: Optional[str]
+    reason: Optional[str] = None
     duration: int

@@ -8,7 +8,7 @@ from scheduler.core.utils import parse_accounts
 
 
 class QueueSettings(BaseSettings):
-    task_queue_maxlen: int = 1000
+    task_queue_maxlen: int = 10
 
 
 class SchedulerSettings(BaseSettings):
@@ -19,10 +19,11 @@ class SchedulerSettings(BaseSettings):
     push_interval: int = 1
 
 
-class ConveerSettings(BaseModel):
+class ConveerSettings(BaseSettings):
     max_test_in_progress: int = 1
-    ptd_addresses: Dict[str, List[HttpUrl]]
-    ptr_addresses: List[HttpUrl]
+    status_notify: str = "http://localhost:8101/api/v1/test-report"
+    ptd_addresses: Dict[str, List[str]]
+    ptr_addresses: List[str]
 
 
 class AccounteerSettings(BaseModel):
@@ -31,8 +32,8 @@ class AccounteerSettings(BaseModel):
 
 class YamlConfig(YamlModel):
     brands: Optional[List[Brand]]
-    ptd_addresses: Dict[str, List[HttpUrl]]
-    ptr_addresses: List[HttpUrl]
+    ptd_addresses: Dict[str, List[str]]
+    ptr_addresses: List[str]
 
 
 class YamlAccountsConfig(YamlModel):

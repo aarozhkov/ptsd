@@ -14,16 +14,16 @@ class TestResultORM(Model):
     test_id = fields.CharField(max_length=255, pk=True)  # make it uuid
     brand = fields.CharField(max_length=255)
     test_suit = fields.CharField(max_length=255)
-    location = fields.CharField(max_length=255)
-    partition = fields.CharField(max_length=255)
-    unit = fields.CharField(max_length=255)
-    allure_link = fields.CharField(max_length=255)
-    log_link = fields.CharField(max_length=255)
+    location: Optional[str] = fields.CharField(max_length=255)
+    partition: Optional[str] = fields.CharField(max_length=255, null=True)
+    unit: Optional[str] = fields.CharField(max_length=255, null=True)
+    allure_link: Optional[str] = fields.CharField(max_length=255, null=True)
+    log_link: Optional[str] = fields.CharField(max_length=255, null=True)
     ptr_address = fields.CharField(max_length=255)
     date_time = fields.DatetimeField(use_tz=False, timezone="UTC")
     status = fields.CharField(max_length=255)
-    reason: str = fields.CharField(max_length=255)
-    duration = fields.IntField()
+    reason: Optional[str] = fields.CharField(max_length=255, null=True)
+    duration: int = fields.IntField()
 
     class Meta:
         table = "test_results"
@@ -59,8 +59,8 @@ class SQLStorageCRUD(ReportStorageCRUD):
     ) -> Any:
         """This is a sync method which work with already asyncly fetched data"""
         if isinstance(orm_schemas, List):
-            return [TestResult.parse_obj(obj) for obj in orm_schemas]
-        return TestResult.parse_obj(orm_schemas)
+            return [TestResult.parse_obj(obj.dict()) for obj in orm_schemas]
+        return TestResult.parse_obj(orm_schemas.dict())
 
     async def get_field_values(self, fields: List[str]) -> Dict[str, List]:
         """Get all values from Test reports property"""

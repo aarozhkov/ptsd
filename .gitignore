@@ -7,6 +7,9 @@ pycache/
 *.py[cod]
 *$py.class
 
+# databases
+databases/
+
 # C extensions
 *.so
 
