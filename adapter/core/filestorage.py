@@ -1,9 +1,13 @@
 from logging import log
-import os, re
+import os
+import re
 
 import boto3
 from shared.core.log import Log
+
 log = Log("DEBUG")
+
+
 class FileStorage:
     def __init__(self, config):
         self.config = config
@@ -30,15 +34,21 @@ class FileStorage:
 
         # TODO Add try except
         log.debug(f"Try upload allure result {testId} to s3")
-        for subdir, dirs, files in os.walk(path):
-            for file in files:
-                full_path = os.path.join(subdir, file)
-                if re.search(r'target\/allure-results', full_path):
-                    continue
-                s3_directory = str(testId) + "/" + full_path[len(path) + 1:]
-                with open(full_path, "rb") as data:
-                    bucket.put_object(Key=s3_directory, Body=data)
-        log.debug(f"Upload result {testId} to s3 finished")
+        try:
+            for subdir, dirs, files in os.walk(path):
+                for file in files:
+                    full_path = os.path.join(subdir, file)
+                    if re.search(r'target\/allure-results', full_path):
+                        continue
+                    s3_directory = str(testId) + "/" + \
+                        full_path[len(path) + 1:]
+                    with open(full_path, "rb") as data:
+                        bucket.put_object(Key=s3_directory, Body=data)
+            log.debug(f"Upload result {testId} to s3 finished")
+            return True
+        except Exception as e:
+            log.debug(f"FAILED upload allure result to s3: {e}")
+            return False
 
     def run_selected_method(self, fsType: str, *args, **kwargs):
         do = f"{fsType}_upload_directory"

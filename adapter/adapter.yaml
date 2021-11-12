@@ -9,6 +9,7 @@ fileStorage:
     regionName: 'eu-central-1'
     bucketName: 'ptsd-reports'
 testTimeout: 300
+callBackURL: 'http://127.0.0.1:8112/api/v1/task_callback'
 testSuites:
   allTests:
     name: com.ringcentral.vlt.acceptance.tests.MainFlowTest

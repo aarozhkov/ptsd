@@ -1,6 +1,9 @@
 import pathlib
 import subprocess
 import os.path
+import shutil
+import httpx
+import asyncio
 
 from shared.core.yamlparser import YamlParser
 from shared.core.log import Log
@@ -8,44 +11,58 @@ from adapter.core.filestorage import FileStorage
 
 log = Log("DEBUG")
 
+
 class Adapter:
+    def __init__(self, config):
+        self.config = config
+
     def buildJars(self):
         return True
 
-    def readinessProbe():
+    def readinessProbe(self):
         return True
 
-    def getAllureReport(testId):
+    def getAllureReport(self, testId):
         return True
 
-    def getTestLog(testId):
+    def getTestLog(self, testId):
         return True
 
-    def generateAllureReport(self, config, testId, workDirectory):
+    def clearResultDir(self, workDirectory):
+        try:
+            shutil.rmtree(workDirectory)
+            return True
+        except OSError as e:
+            print("Error: %s - %s." % (e.filename, e.strerror))
+            return False
+
+    def generateAllureReport(self, testId, workDirectory):
         result = subprocess.run(
-            ["allure", "generate", f"{workDirectory}/target/allure-results", "-o", f"{workDirectory}/allure"],
+            ["allure", "generate",
+                f"{workDirectory}/target/allure-results", "-o", f"{workDirectory}/allure"],
             stdout=subprocess.PIPE,
             cwd=workDirectory,
-            timeout=config["testTimeout"],
+            timeout=self.config["testTimeout"],
         )
         with open(workDirectory + "/stdout.log", "a+") as f:
             f.write(result.stdout.decode("utf-8"))
             f.close()
 
         try:
-            allureReportIndex = pathlib.Path(workDirectory + "/allure/index.html")
+            allureReportIndex = pathlib.Path(
+                workDirectory + "/allure/index.html")
             allureReportIndex.resolve(strict=True)
         except FileNotFoundError:
-            log.debug("FileNotFoundError: allure problem")
+            log.error("FileNotFoundError: allure problem")
             return ""
         else:
             log.debug("Allure OK. Try Upload to s3")
-            fs = FileStorage(config)
+            fs = FileStorage(self.config)
             reportUrl = fs.upload_directory(workDirectory, testId)
             return reportUrl
 
-    def runJars(self, XMLLocation, config, workDirectory):
-        buildsDirectory = config["dirs"]["buildsDir"]
+    def runJars(self, XMLLocation, workDirectory):
+        buildsDirectory = self.config["dirs"]["buildsDir"]
         # TODO need to be in config file or something like that
         log.debug(
             f"java -javaagent:{buildsDirectory}/aspectjweaver.jar -jar {buildsDirectory}/UPTC.jar {XMLLocation} ----- {workDirectory}"
@@ -60,7 +77,7 @@ class Adapter:
             ],
             stdout=subprocess.PIPE,
             cwd=workDirectory,
-            timeout=config["testTimeout"],
+            timeout=self.config["testTimeout"],
         )
 
         with open(workDirectory + "/stdout.log", "a+") as f:
@@ -68,15 +85,33 @@ class Adapter:
             f.close()
         return True
 
-    def saveTestNGXML(self, tests_directory, XML):
+    def saveTestNGXML(self, tests_directory: str, XML: str):
         # TODO add exceptions
         xmlLocation = tests_directory + "/testng.xml"
-        with open(xmlLocation, "w+") as f:
-            f.write(XML)
-            f.close()
+
+        try:
+            with open(xmlLocation, "w+") as f:
+                f.write(XML)
+                f.close()
+        except OSError:
+            log.error(f"Could not open/read file: (fname)")
         return xmlLocation
 
-    def callBackFunction(self):
+    def callBackFunction(self, taskId, result, url=None):
+        log.debug("Try callback")
+        payload = {"task": taskId, "result": result}
+        try:
+            httpx.post(self.config["callBackURL"], data=payload)
+        except TimeoutError as err:
+            log.error(err)
+        except asyncio.TimeoutError as err:
+            log.error(err)
+        except httpx.ConnectTimeout as err:
+            log.error(err)
+        except httpx.HTTPError as err:
+            log.error(err)
+        except Exception as e:
+            log.error(e)
         return True
 
     def createDirectory(self, path, testId=None):
@@ -90,30 +125,35 @@ class Adapter:
             # TODO Add exception
             return False
 
-
-    def prepareDirectory(self, XML, data, config):
-        self.createDirectory(config["dirs"]["resultsDir"])
+    def prepareDirectory(self, XML, data):
+        self.createDirectory(self.config["dirs"]["resultsDir"])
         testId = data.test_id
-        current_test_directory = self.createDirectory(config["dirs"]["resultsDir"], testId)
+        current_test_directory = self.createDirectory(
+            self.config["dirs"]["resultsDir"], testId)
         self.saveTestNGXML(current_test_directory, XML)
         return testId
 
-    def startPipeline(self, testId, config):
-        # TODO move to s3, add exceptions
-        current_test_directory = config["dirs"]["resultsDir"] + "/" + str(testId)
+    def startPipeline(self, testId):
+        current_test_directory = self.config["dirs"]["resultsDir"] + \
+            "/" + str(testId)
         xmlLocation = current_test_directory + "/testng.xml"
-        self.runJars(xmlLocation, config, current_test_directory)
-        reportResult = self.generateAllureReport(config, testId, current_test_directory)
-        # self.callBackFunction(reportResult)
+        try:
+            self.runJars(xmlLocation, current_test_directory)
+            result = self.generateAllureReport(testId, current_test_directory)
+            self.callBackFunction(testId, result)
+            self.clearResultDir(current_test_directory)
+        except Exception as e:
+            self.callBackFunction(testId, False)
+            self.clearResultDir(current_test_directory)
         return testId
 
-    def initTestNg(self, data, config):
+    def initTestNg(self, data):
         targetPartitionUnit = ""
         extension = data.extension  # ? data.extension : ""
         methods = ""
 
         try:
-            classes = config["testSuites"][data.test_suite]
+            classes = self.config["testSuites"][data.test_suite]
             # TODO Add catch exceptions
 
             for method in classes["methods"]:

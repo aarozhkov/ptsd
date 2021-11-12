@@ -7,10 +7,11 @@ from shared.core.yamlparser import YamlParser
 
 from adapter.core import adapter
 
-adapter_api = SomeFastApiApp(app_name="adapter")
-adapter = adapter.Adapter()
 parser = YamlParser()
 config = parser.parse("adapter/adapter.yaml")
+adapter_api = SomeFastApiApp(app_name="adapter")
+adapter = adapter.Adapter(config)
+
 
 @adapter_api.get("/status")
 async def adapter_status():
@@ -20,9 +21,9 @@ async def adapter_status():
 @adapter_api.post("/test")
 async def checkAndRun(data: TestRequest, background_tasks: BackgroundTasks):
     try:
-        XML = adapter.initTestNg(data, config)
-        testId = adapter.prepareDirectory(XML, data, config)
-        background_tasks.add_task(adapter.startPipeline, testId, config)
+        XML = adapter.initTestNg(data)
+        testId = adapter.prepareDirectory(XML, data)
+        background_tasks.add_task(adapter.startPipeline, testId)
         return JSONResponse(status_code=418, content={"success": True, "ptrTestId": testId})
     except:
         return JSONResponse(
@@ -34,9 +35,9 @@ async def checkAndRun(data: TestRequest, background_tasks: BackgroundTasks):
 @adapter_api.post("/testxml")
 async def checkAndRunXML(data: TestRequest, background_tasks: BackgroundTasks):
     try:
-        XML = adapter.initTestNg(data, config)
-        testId = adapter.prepareDirectory(XML, data, config)
-        background_tasks.add_task(adapter.startPipeline, testId, config)
+        XML = adapter.initTestNg(data)
+        testId = adapter.prepareDirectory(XML, data)
+        background_tasks.add_task(adapter.startPipeline, testId)
         return Response(XML, media_type="application/xml")
     except:
         return JSONResponse(
