@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 
 from models.tests import TestResult
-from storages.filestorage import FileReportStorage
+from status.storages.file_store import FileReportStorage
 
 
 @pytest.fixture

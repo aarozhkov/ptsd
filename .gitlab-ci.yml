@@ -1,0 +1,121 @@
+variables:
+  CI_REGISTRY_URL: docker-registry.lab.nordigy.ru
+
+stages:
+  - test
+  - build
+  - tag
+
+"Calculate tag":
+  stage: .pre
+  image: python:3.9.8-alpine
+  tags:
+    - lab
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+  before_script:
+    - apk add git
+  script:
+    - latest_tag=$(git describe --tags --abbrev=0 || true)
+    - python .gitlab/semver.py $latest_tag
+  artifacts:
+    reports:
+      dotenv: tag.env
+
+"Unit tests":
+  stage: test
+  image: python:3.9.8-bullseye
+  tags:
+    - lab
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - pytest --junitxml=test_report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: test_report.xml
+
+.build:
+  stage: build
+  image: docker:20.10.10
+  tags:
+    - lab
+  dependencies:
+    - "Calculate tag"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY_URL
+  script:
+    - docker build -f ${DOCKERFILE} -t ${IMAGE_NAME}:${NEW_TAG} -t ${IMAGE_NAME}:latest .
+    - docker push ${IMAGE_NAME}:${NEW_TAG}
+    - docker push ${IMAGE_NAME}:latest
+
+"Build status image":
+  extends: .build
+  variables:
+    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/status
+    DOCKERFILE: Dockerfile_status
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      changes:
+        - requirements.txt
+        - Dockerfile_status
+        - shared/**/*
+        - status/**/*
+
+"Build scheduler image":
+  extends: .build
+  variables:
+    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/scheduler
+    DOCKERFILE: scheduler/Dockerfile
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      changes:
+        - requirements.txt
+        - scheduler/Dockerfile
+        - shared/**/*
+        - scheduler/**/*
+
+"Build dummy_ptr image":
+  extends: .build
+  variables:
+    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/dummy_ptr
+    DOCKERFILE: tests/Dockerfile_ptr
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      changes:
+        - requirements.txt
+        - shared/**/*
+        - scheduler/**/*
+        - tests/**/*
+
+"Build supervisor image":
+  extends: .build
+  variables:
+    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/supervisor
+    DOCKERFILE: Dockerfile
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      changes:
+        - requirements.txt
+        - Dockerfile
+        - shared/**/*
+        - supervisor/**/*
+
+"Update repo tag":
+  stage: tag
+  image: alpine
+  tags:
+    - lab
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+  dependencies:
+    - "Calculate tag"
+  before_script:
+    - apk add git
+    - git config --global user.email "rcv-devops@nordigy.ru"
+    - git config --global user.name "Gitlab CI"
+    - git remote set-url origin https://${CI_GIT_USER}:${CI_GIT_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
+  script:
+    - git tag -a ${NEW_TAG} -m "[CI] Add new tag ${NEW_TAG}"
+    - git push --tags -vvv

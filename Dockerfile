@@ -17,8 +17,8 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 USER app
 
-COPY . /app/
-
+COPY shared /app/shared
+COPY supervisor /app/supervisor
 
 EXPOSE 8112-8113
 

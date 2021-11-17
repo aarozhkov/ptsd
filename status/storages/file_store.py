@@ -69,6 +69,7 @@ class FileReportStorage(ReportStorageCRUD):
     async def find(
         self, props: Optional[Dict[str, str]]
     ) -> List:  # TODO add more strict type hinting
+        pass
 
     async def add(self, report: TestResult) -> bool:
         """Add new report to cached store and sync with undernith file
