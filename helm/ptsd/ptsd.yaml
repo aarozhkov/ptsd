@@ -1,0 +1,56 @@
+apps:
+  - name: adapter
+    enabled: true
+    project: ptsd
+    namespace: ptsd
+    repo:
+      path: helm/apps
+      url: git@git.ringcentral.com:rcvdevops/ptsd.git
+      ref: master
+    helm:
+      valuesFile: adapter.yaml
+    sync:
+      prune: true
+      selfHeal: true
+
+  - name: scheduler
+    enabled: true
+    project: ptsd
+    namespace: ptsd
+    repo:
+      path: helm/apps
+      url: git@git.ringcentral.com:rcvdevops/ptsd.git
+      ref: master
+    helm:
+      valuesFile: scheduler.yaml
+    sync:
+      prune: true
+      selfHeal: true
+
+  - name: status
+    enabled: true
+    project: ptsd
+    namespace: ptsd
+    repo:
+      path: helm/apps
+      url: git@git.ringcentral.com:rcvdevops/ptsd.git
+      ref: master
+    helm:
+      valuesFile: status.yaml
+    sync:
+      prune: true
+      selfHeal: true
+
+  - name: supervisor
+    enabled: true
+    project: ptsd
+    namespace: ptsd
+    repo:
+      path: helm/apps
+      url: git@git.ringcentral.com:rcvdevops/ptsd.git
+      ref: master
+    helm:
+      valuesFile: supervisor.yaml
+    sync:
+      prune: true
+      selfHeal: true
