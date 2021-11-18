@@ -20,6 +20,6 @@ USER app
 COPY shared /app/shared
 COPY supervisor /app/supervisor
 
-EXPOSE 8112-8113
+EXPOSE 8000
 
-CMD ["python3", "-m" "supervisor.main"]
+CMD ["python3", "-m", "supervisor.main"]
