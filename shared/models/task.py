@@ -22,10 +22,6 @@ class TestResult(BaseModel):
     test_suit: str
     brand: str
     location: str
-    # partition: Union[str, None] = None
-    # unit: Union[str, None] = None
-    # allure_link: Union[str, None] = None
-    # log_link: Union[str, None] = None
     partition: Optional[str] = None
     unit: Optional[str] = None
     allure_link: Optional[str] = None

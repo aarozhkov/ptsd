@@ -16,7 +16,7 @@ from httpx import AsyncClient, HTTPStatusError
 
 from shared.models.task import TestTask, TestResult
 from scheduler.core.accounteer import Accounteer
-from .ptr_schemas import PTRTask, PTRResult, PtrOutcome, ResultEnum
+from .ptr_schemas import AdapterResult, PTRTask, PTRResult, PtrOutcome, ResultEnum
 from .queue import AbstractTaskQueue
 
 """ This class is adapter between new architecture and old one with PTR """
@@ -200,11 +200,17 @@ class Conveer:
                         return False
         return False
 
-    async def get_notification(self, test_result: TestResult):
-        """get result notification from ptr"""
-        self.log.debug("Got notification for: %s", test_result)
+    async def get_task_callback(self, test_result: AdapterResult) -> bool:
+        """get result notification from Adapter"""
+        for ptd_queue in self.tests.values():
+            if test_result not in ptd_queue.keys():
+                return False
 
-    async def get_notification_legacy(self, ptr_result: PTRResult):
+            self.log.debug("Got notification for Adapter: %s", test_result)
+            return True
+        return False
+
+    async def get_notification_legacy(self, ptr_result: PTRResult) -> bool:
         """get result notification from ptr"""
         if ptr_result.ptr_index != self.conveer_id:
             return False
@@ -292,6 +298,21 @@ conveer_router = APIRouter(tags=["conveer", "ptr"])
 
 
 @conveer_router.post("/test-completed")
+async def legacy_test_notification(test_result: PTRResult):
+    global GLOBAL_CONVEER_STATE
+    result = False
+    for conveer in GLOBAL_CONVEER_STATE:
+        if await conveer.get_notification_legacy(test_result):
+            result = True
+            return {"success": True}
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No test requester found for this test: {test_result.ptr_test_id}",
+        )
+
+
+@conveer_router.post("/api/v1/task_callback")
 async def legacy_test_notification(test_result: PTRResult):
     global GLOBAL_CONVEER_STATE
     result = False

@@ -1,5 +1,5 @@
 """ Ptr Legacy API payload Schemas """
-from typing import Optional, List
+from typing import Optional, List, Any
 from pydantic import BaseModel, SecretStr
 from enum import Enum
 from .utils import to_camel
@@ -50,11 +50,18 @@ class PtrOutcome(CamelCaseBase):
     status: ResultEnum
     call_id: Optional[str]
     reason: Optional[str]
-    # duration: int FIXME: conveer WILL calculate this!!!
-    # FIXME: conveer must fixate startTime before send test task!!!
 
 
 class PTRResult(CamelCaseBase):
     ptr_test_id: int  # this is generated on PTR
     ptr_index: int  # Returns back from PTR task request
     outcomes: List[PtrOutcome]
+
+
+class AdapterResult(BaseModel):
+    test_id: Any[UUID, str]
+    call_id: Optional[str] = None
+    allure_link: Optional[str] = None
+    log_link: Optional[str] = None
+    status: str
+    reason: Optional[str] = None
