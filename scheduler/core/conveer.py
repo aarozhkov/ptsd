@@ -151,15 +151,15 @@ class Conveer:
         )
 
     async def _push_to_status(self, test_result: TestResult) -> bool:
-        """Push task to provided ptr"""
+        """Push task to Status service"""
         attempts = 3
         self.log.debug(
             self.status_notify, test_result.json(by_alias=True, exclude_unset=True)
         )
+        # FIXME: Retry must be part of Istion or other infra solution.
         async with AsyncClient() as client:
             while attempts >= 0:
                 try:
-                    # FIXME because we use PASSWORD as secure
                     r = await client.post(
                         self.status_notify,
                         headers={"Content-Type": "application/json"},
@@ -169,8 +169,13 @@ class Conveer:
                     self.log.debug("Send test report to status service %s", r.content)
                     return True
                 except HTTPStatusError as e:
-                    self.log.exception("Failed to deliver report", e)
-                    return False
+                    self.log.error(
+                        "Failed to send test report to %s: %e", self.status_notify, e
+                    )
+                    attempts -= 1
+        self.log.exception(
+            "Failed to deliver report", ConveerException("Failed all attempts to send ")
+        )
         return False
 
     async def _push_to_ptr(self, ptr: str, ptd: str, task: PTRTask) -> bool:
