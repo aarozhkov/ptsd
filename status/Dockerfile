@@ -8,9 +8,9 @@ RUN pip install -r requirements.txt
 RUN useradd -U -s /bin/false app
 USER app
 
-COPY shared /app/
-COPY status /app/
+COPY shared /app/shared
+COPY status /app/status
 
-EXPOSE 8101
+EXPOSE 8000
 
-CMD ["uvicorn", "status.main:app", "--port", "8101"]
+CMD ["uvicorn", "status.main:app", "--host", "0.0.0.0", "--port", "8000"]

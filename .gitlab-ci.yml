@@ -22,6 +22,19 @@ stages:
     reports:
       dotenv: tag.env
 
+"Validate helmcharts":
+  stage: test
+  image: alpine/helm:3.7.1
+  tags:
+    - lab
+  script:
+    - cd helm/apps
+    - |
+      for d in values/*; do
+          helm template . --values="${d}" > /dev/null
+          echo "$d"
+      done
+
 "Unit tests":
   stage: test
   image: python:3.9.8-bullseye
@@ -50,18 +63,18 @@ stages:
     - docker push ${IMAGE_NAME}:${NEW_TAG}
     - docker push ${IMAGE_NAME}:latest
 
-"Build status image":
+"Build adapter image":
   extends: .build
   variables:
-    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/status
-    DOCKERFILE: Dockerfile_status
+    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/adapter
+    DOCKERFILE: adapter/Dockerfile
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'
       changes:
         - requirements.txt
-        - Dockerfile_status
+        - adapter/Dockerfile
         - shared/**/*
-        - status/**/*
+        - adapter/**/*
 
 "Build scheduler image":
   extends: .build
@@ -76,29 +89,29 @@ stages:
         - shared/**/*
         - scheduler/**/*
 
-"Build dummy_ptr image":
+"Build status image":
   extends: .build
   variables:
-    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/dummy_ptr
-    DOCKERFILE: tests/Dockerfile_ptr
+    IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/status
+    DOCKERFILE: status/Dockerfile
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'
       changes:
         - requirements.txt
+        - status/Dockerfile
         - shared/**/*
-        - scheduler/**/*
-        - tests/**/*
+        - status/**/*
 
 "Build supervisor image":
   extends: .build
   variables:
     IMAGE_NAME: ${CI_REGISTRY_URL}/ptsd/supervisor
-    DOCKERFILE: Dockerfile
+    DOCKERFILE: supervisor/Dockerfile
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'
       changes:
         - requirements.txt
-        - Dockerfile
+        - supervisor/Dockerfile
         - shared/**/*
         - supervisor/**/*
 

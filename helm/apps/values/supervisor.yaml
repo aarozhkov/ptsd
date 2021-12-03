@@ -1,0 +1,37 @@
+name: supervisor
+
+replicaCount: 1
+revisionHistoryLimit: 1
+rolloutStaregy: RollingUpdate
+
+image:
+  repository: docker-registry.lab.nordigy.ru/ptsd/supervisor
+  tag: latest
+  pullPolicy: Always
+
+service:
+  port: 8000
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx-internal
+  hosts:
+    - host: supervisor.ptsd.c01.eks01.k8s.fra41.lab.nordigy.ru
+      paths:
+        - path: /
+          port: 8000
+
+servicemonitor:
+  enabled: true
+  promOperatorSelector: default
+  path: /metrics
+  port: http
+
+resources:
+  limits:
+    cpu: "0.5"
+    memory: "512Mi"
+  requests:
+    cpu: "0.1"
+    memory: "128Mi"
