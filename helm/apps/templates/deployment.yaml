@@ -36,9 +36,9 @@ spec:
               value: {{ .value | quote }}
             {{- end }}
           {{- end }}
-      {{- if .Values.config }}
       imagePullSecrets:
         - name: docker-registry
+      {{- if .Values.config }}
       volumes:
         name: {{ .Values.name }}-config
         configMap:
