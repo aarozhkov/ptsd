@@ -35,7 +35,3 @@ resources:
   requests:
     cpu: "0.1"
     memory: "128Mi"
-
-envVariables:
-  - name: 123  # CHANGE_ME
-    value: test
