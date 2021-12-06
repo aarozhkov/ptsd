@@ -5,7 +5,7 @@ revisionHistoryLimit: 1
 rolloutStaregy: RollingUpdate
 
 image:
-  repository: docker-registry.lab.nordigy.ru/ptsd/adapter
+  repository: docker-registry.lab.nordigy.ru:443/ptsd/adapter
   tag: 1.0.0
   pullPolicy: Always
 
