@@ -40,10 +40,10 @@ spec:
         - name: docker-registry
       {{- if .Values.config }}
       volumes:
-        name: {{ .Values.name }}-config
-        configMap:
-          name: {{ .Values.name }}-config
-          items:
-            - key: {{ .Values.config.fileName }}
-              path: {{ .Values.config.path }}/{{ .Values.config.fileName }}
+        - name: {{ .Values.name }}-config
+          configMap:
+            name: {{ .Values.name }}-config
+            items:
+              - key: {{ .Values.config.fileName }}
+                path: {{ .Values.config.path }}/{{ .Values.config.fileName }}
       {{- end }}
