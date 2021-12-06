@@ -5,8 +5,8 @@ apps:
     namespace: ptsd
     repo:
       path: helm/apps
-      url: git@git.ringcentral.com:rcvdevops/ptsd.git
-      ref: master
+      url: https://git.ringcentral.com/rcvdevops/ptsd.git
+      ref: 1.0.0
     helm:
       valuesFile: values/adapter.yaml
     sync:
@@ -19,8 +19,8 @@ apps:
     namespace: ptsd
     repo:
       path: helm/apps
-      url: git@git.ringcentral.com:rcvdevops/ptsd.git
-      ref: master
+      url: https://git.ringcentral.com/rcvdevops/ptsd.git
+      ref: 1.0.0
     helm:
       valuesFile: values/scheduler.yaml
     sync:
@@ -33,8 +33,8 @@ apps:
     namespace: ptsd
     repo:
       path: helm/apps
-      url: git@git.ringcentral.com:rcvdevops/ptsd.git
-      ref: master
+      url: https://git.ringcentral.com/rcvdevops/ptsd.git
+      ref: 1.0.0
     helm:
       valuesFile: values/status.yaml
     sync:
@@ -47,8 +47,8 @@ apps:
     namespace: ptsd
     repo:
       path: helm/apps
-      url: git@git.ringcentral.com:rcvdevops/ptsd.git
-      ref: master
+      url: https://git.ringcentral.com/rcvdevops/ptsd.git
+      ref: 1.0.0
     helm:
       valuesFile: values/supervisor.yaml
     sync:
