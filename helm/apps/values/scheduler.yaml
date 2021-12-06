@@ -6,7 +6,7 @@ rolloutStaregy: RollingUpdate
 
 image:
   repository: docker-registry.lab.nordigy.ru:443/ptsd/scheduler
-  tag: 1.0.0
+  tag: 1.0.1
   pullPolicy: Always
 
 service:
