@@ -6,7 +6,7 @@ apps:
     repo:
       path: helm/apps
       url: https://git.ringcentral.com/rcvdevops/ptsd.git
-      ref: 1.0.0
+      ref: master
     helm:
       valuesFile: values/adapter.yaml
     sync:
@@ -20,7 +20,7 @@ apps:
     repo:
       path: helm/apps
       url: https://git.ringcentral.com/rcvdevops/ptsd.git
-      ref: 1.0.0
+      ref: master
     helm:
       valuesFile: values/scheduler.yaml
     sync:
@@ -34,7 +34,7 @@ apps:
     repo:
       path: helm/apps
       url: https://git.ringcentral.com/rcvdevops/ptsd.git
-      ref: 1.0.0
+      ref: master
     helm:
       valuesFile: values/status.yaml
     sync:
@@ -48,7 +48,7 @@ apps:
     repo:
       path: helm/apps
       url: https://git.ringcentral.com/rcvdevops/ptsd.git
-      ref: 1.0.0
+      ref: master
     helm:
       valuesFile: values/supervisor.yaml
     sync:
