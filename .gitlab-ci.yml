@@ -52,17 +52,26 @@ stages:
 
 .build:
   stage: build
-  image: docker:20.10.10
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   tags:
     - lab
   dependencies:
     - "Calculate tag"
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY_URL
+    - echo "{\"auths\":{\"${CI_REGISTRY_URL}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
   script:
-    - docker build -f ${DOCKERFILE} -t ${IMAGE_NAME}:${NEW_TAG} -t ${IMAGE_NAME}:latest .
-    - docker push ${IMAGE_NAME}:${NEW_TAG}
-    - docker push ${IMAGE_NAME}:latest
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKERFILE}"
+      --destination "${IMAGE_NAME}:${NEW_TAG}"
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKERFILE}"
+      --destination "${IMAGE_NAME}:latest"
 
 "Build adapter image":
   extends: .build
