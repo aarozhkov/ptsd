@@ -1,0 +1,18 @@
+{{- if .Values.servicemonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    app: {{ .Values.name }}
+    prometheus: {{ .Values.servicemonitor.promOperatorSelector }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+      prometheus: {{ .Values.servicemonitor.promOperatorSelector }}
+  endpoints:
+    - port: {{ .Values.servicemonitor.port }}
+      path: {{ .Values.servicemonitor.path }}
+{{- end }}

@@ -2,6 +2,7 @@
 *.yaml
 .vscode
 !adapter/*.yaml
+!helm/**/*
 results/
 builds/
 # Byte-compiled / optimized / DLL files
