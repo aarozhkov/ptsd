@@ -1,4 +1,4 @@
-.PHONY: local-dev fix check typing unit supervisor
+.PHONY: local-dev fix check typing unit_adapter unit_scheduler supervisor
 
 
 local-dev:
@@ -19,8 +19,12 @@ check:
 typing:
 	mypy --check --exclude 'venv\/'
 
-unit:
-	pytest --ignore=tests/integration
+unit_adapter:
+	pytest --ignore=tests/integration --ignore=tests/supervisor --ignore=tests/shared --ignore=tests/scheduler
+
+unit_scheduler:
+	pytest --ignore=tests/integration --ignore=tests/supervisor --ignore=tests/shared --ignore=tests/adapter
+
 
 supervisor:
 	uvicorn supervisor:app --reload

@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional, Union
 from datetime import datetime
+from typing import Optional, Union
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class TestTask(BaseModel):
@@ -18,15 +19,16 @@ class TestTask(BaseModel):
 
 class TestResult(BaseModel):
     # TODO can we just extend TestTask?
+    # FIXME this is not Generic test result.
+    #       need to implement "generic" result storage.
     test_id: UUID  # make it uuid
     test_suit: str
     brand: str
-    location: str
+    location: str  # location of test executin
     partition: Optional[str] = None
     unit: Optional[str] = None
     allure_link: Optional[str] = None
     log_link: Optional[str] = None
-    ptr_address: str  # check if we still need it? It is a part of logs at least
     date_time: datetime  # isoformat
     status: str
     # status: ResultEnum

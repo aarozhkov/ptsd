@@ -1,22 +1,24 @@
+import asyncio
+import logging
+import random
 from datetime import datetime
+from typing import Dict, List, Optional, Tuple
+
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
-from typing import List, Dict, Optional, Tuple
-import logging
-import asyncio
-import random
-from pytz import UTC
+from httpx import AsyncClient, HTTPStatusError
 from prometheus_client import Counter
+from pytz import UTC
 
+from scheduler.core.accounteer import Accounteer
 from scheduler.core.config import ConveerSettings
 from scheduler.core.version_checker import VersionChecker
 from shared.models.account import Account
-from httpx import AsyncClient, HTTPStatusError
+from shared.models.task import TestResult, TestTask
 
-from shared.models.task import TestTask, TestResult
-from scheduler.core.accounteer import Accounteer
-from .ptr_schemas import AdapterResult, PTRTask, PTRResult, PtrOutcome, ResultEnum
+from .ptr_schemas import (AdapterResult, PtrOutcome, PTRResult, PTRTask,
+                          ResultEnum)
 from .queue import AbstractTaskQueue
 
 """ This class is adapter between new architecture and old one with PTR """
@@ -205,15 +207,31 @@ class Conveer:
                         return False
         return False
 
-    async def get_task_callback(self, test_result: AdapterResult) -> bool:
+    async def handle_task_result(self, test_result: AdapterResult) -> bool:
         """get result notification from Adapter"""
-        for ptd_queue in self.tests.values():
-            if test_result not in ptd_queue.keys():
-                return False
+        self.log.debug("Got notification for Adapter: %s", test_result)
+        if test_result.ptd_address not in self.tests.keys():
+            self.log.error(
+                "%s result data does not match Coveer PTDs pool. Ptd not match: %s",
+                test_result.test_id,
+                test_result.ptd_address,
+            )
+            return False
+        if test_result.test_id not in self.tests[test_result.ptd_address].keys():
+            self.log.error(
+                "%s does not match Coveer any active tests state for ptd: %s",
+                test_result.test_id,
+                test_result.ptd_address,
+            )
+            return False
+        return await self._handle_result(test_result)
 
-            self.log.debug("Got notification for Adapter: %s", test_result)
-            return True
-        return False
+    async def _handle_result(self, test_result: AdapterResult):
+        """
+        Release test queue
+        Release account
+
+        """
 
     async def get_notification_legacy(self, ptr_result: PTRResult) -> bool:
         """get result notification from ptr"""
@@ -296,7 +314,7 @@ class Conveer:
 
 
 # FIXME somehow change GLOBAL state usage
-GLOBAL_CONVEER_STATE: List[Conveer] = []
+GLOBAL_CONVEER_STATE: Dict[str, Conveer] = {}
 
 
 conveer_router = APIRouter(tags=["conveer", "ptr"])
@@ -306,7 +324,7 @@ conveer_router = APIRouter(tags=["conveer", "ptr"])
 async def legacy_test_notification(test_result: PTRResult):
     global GLOBAL_CONVEER_STATE
     result = False
-    for conveer in GLOBAL_CONVEER_STATE:
+    for _, conveer in GLOBAL_CONVEER_STATE.items():
         if await conveer.get_notification_legacy(test_result):
             result = True
             return {"success": True}
@@ -317,14 +335,10 @@ async def legacy_test_notification(test_result: PTRResult):
         )
 
 
-@conveer_router.post("/api/v1/task_callback")
-async def legacy_test_notification(test_result: PTRResult):
+@conveer_router.post("/api/v1/task_callback/{conveer_id}")
+async def test_notification(conveer_id: str, test_result: PTRResult):
     global GLOBAL_CONVEER_STATE
-    result = False
-    for conveer in GLOBAL_CONVEER_STATE:
-        if await conveer.get_notification_legacy(test_result):
-            result = True
-            return {"success": True}
+    result = GLOBAL_CONVEER_STATE[conveer_id].handle_task_result(test_result)
     if not result:
         raise HTTPException(
             status_code=404,
@@ -347,27 +361,26 @@ def init_conveers(
     """Initialize all conveers and regester in FastAPI"""
     global GLOBAL_CONVEER_STATE
     for location in config.ptd_addresses:
-        GLOBAL_CONVEER_STATE.append(
-            Conveer(
-                task_queue=task_queue,
-                accounteer=accounteer,
-                ptd_addresses=config.ptd_addresses[location],
-                ptr_addresses=config.ptr_addresses,
-                location=location,
-                max_test_in_progress=config.max_test_in_progress,
-                version_checker=VersionChecker(),
-                status_notify=config.status_notify,
-            )
+        conveer = Conveer(
+            task_queue=task_queue,
+            accounteer=accounteer,
+            ptd_addresses=config.ptd_addresses[location],
+            ptr_addresses=config.ptr_addresses,
+            location=location,
+            max_test_in_progress=config.max_test_in_progress,
+            version_checker=VersionChecker(),
+            status_notify=config.status_notify,
         )
+        GLOBAL_CONVEER_STATE[conveer.conveer_id] = conveer
     app.include_router(conveer_router)
 
     @app.on_event("startup")
     def conveers_start() -> None:
-        for conveer in GLOBAL_CONVEER_STATE:
+        for _, conveer in GLOBAL_CONVEER_STATE.items():
             conveer.run()
 
     # TODO: on event stop?
     @app.on_event("shutdown")
     def conveers_stop():
-        for conveer in GLOBAL_CONVEER_STATE:
+        for _, conveer in GLOBAL_CONVEER_STATE.items():
             conveer.stop()

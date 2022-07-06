@@ -1,7 +1,10 @@
 """ Ptr Legacy API payload Schemas """
-from typing import Optional, List, Any
-from pydantic import BaseModel, SecretStr
 from enum import Enum
+from typing import Any, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, SecretStr
+
 from .utils import to_camel
 
 
@@ -65,3 +68,4 @@ class AdapterResult(BaseModel):
     log_link: Optional[str] = None
     status: str
     reason: Optional[str] = None
+    ptd_address: str
